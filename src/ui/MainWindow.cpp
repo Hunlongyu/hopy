@@ -322,6 +322,7 @@ void MainWindow::showAtCursor() {
     updateFilterButtons();               // keep the last-used category (do not reset)
     applyFilter();
     showTimer_.restart();
+    platform::setNoActivate(winId());    // hard guarantee: this window never takes focus
     show(); raise();                     // shown WITHOUT activating (WA_ShowWithoutActivating)
     inputHook_->start(this);             // route keyboard here while visible
 }

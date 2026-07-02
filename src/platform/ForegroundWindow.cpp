@@ -124,19 +124,46 @@ bool caretRectViaGuiThread(RECT& out) {
     out = RECT{ tl.x, tl.y, br.x, br.y };
     return true;
 }
+
+// Last resort: attach to the foreground thread's input queue and read its caret
+// directly (GetCaretPos only works for the attached thread). Catches apps whose
+// caret neither UIA nor GetGUIThreadInfo reports in time.
+bool caretRectViaAttachedThread(RECT& out) {
+    HWND fg = GetForegroundWindow();
+    if (!fg) return false;
+    const DWORD self = GetCurrentThreadId();
+    const DWORD fgThread = GetWindowThreadProcessId(fg, nullptr);
+    if (!fgThread || fgThread == self) return false;
+    if (!AttachThreadInput(self, fgThread, TRUE)) return false;
+    POINT pt{};
+    HWND focus = GetFocus();                 // the caret-owning window in that thread
+    const bool got = focus && GetCaretPos(&pt);
+    if (got) ClientToScreen(focus, &pt);
+    AttachThreadInput(self, fgThread, FALSE);
+    if (!got || (pt.x == 0 && pt.y == 0)) return false;
+    out = RECT{ pt.x, pt.y, pt.x + 2, pt.y + 18 };   // caret has ~0 width; nominal height
+    return true;
+}
 } // namespace
 
 bool queryCaret(CaretInfo& out) {
-    RECT rc{};
-    if (!caretRectViaUIA(rc) && !caretRectViaGuiThread(rc)) return false;
-    const POINT center{ (rc.left + rc.right) / 2, (rc.top + rc.bottom) / 2 };
-    // Reject transitional/garbage rects: right after a paste + refocus UIA can
-    // momentarily report a caret near the origin. A genuine caret lies inside the
-    // foreground window — if it doesn't, treat it as "no caret" and let the caller
-    // fall back rather than anchoring the window to the top-left corner.
     HWND fg = GetForegroundWindow();
     RECT wr{};
-    if (!fg || !GetWindowRect(fg, &wr) || !PtInRect(&wr, center)) return false;
+    if (!fg || !GetWindowRect(fg, &wr)) return false;
+    // A genuine caret sits inside the foreground window. Validate EACH source and
+    // fall through to the next, so a transitional/garbage rect from one method
+    // (e.g. UIA's (0,0) right after a paste) doesn't abort the whole lookup.
+    auto valid = [&](const RECT& r) {
+        if (r.bottom <= r.top) return false;
+        const POINT c{ (r.left + r.right) / 2, (r.top + r.bottom) / 2 };
+        return PtInRect(&wr, c) != FALSE;
+    };
+    RECT rc{};
+    if (!((caretRectViaUIA(rc)            && valid(rc)) ||
+          (caretRectViaGuiThread(rc)      && valid(rc)) ||
+          (caretRectViaAttachedThread(rc) && valid(rc))))
+        return false;
+    const POINT center{ (rc.left + rc.right) / 2, (rc.top + rc.bottom) / 2 };
     out.caret = QRect(QPoint(rc.left, rc.top), QPoint(rc.right, rc.bottom));
     MONITORINFOEXW mi{};
     mi.cbSize = sizeof(mi);
@@ -147,6 +174,13 @@ bool queryCaret(CaretInfo& out) {
     out.device = QString::fromWCharArray(mi.szDevice);
     return true;
 }
+
+void setNoActivate(quintptr windowHandle) {
+    HWND h = reinterpret_cast<HWND>(windowHandle);
+    if (!h) return;
+    const LONG_PTR ex = GetWindowLongPtrW(h, GWL_EXSTYLE);
+    SetWindowLongPtrW(h, GWL_EXSTYLE, ex | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW);
+}
 } // namespace hopy::platform
 
 #elif defined(Q_OS_MAC)
@@ -156,6 +190,7 @@ WindowHandle captureForegroundWindow() { return 0; }
 void restoreForegroundWindow(WindowHandle) {}
 bool isForegroundWindow(WindowHandle) { return true; }
 bool isOwnWindow(WindowHandle) { return false; }
+void setNoActivate(quintptr) {}
 void sendPasteShortcut(bool plainText) {
     CGEventSourceRef src = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
     const CGKeyCode kV = 9;
@@ -196,6 +231,7 @@ void restoreForegroundWindow(WindowHandle h) {
 }
 bool isForegroundWindow(WindowHandle) { return true; }
 bool isOwnWindow(WindowHandle) { return false; }
+void setNoActivate(quintptr) {}
 void sendPasteShortcut(bool plainText) {
     Display* d = XOpenDisplay(nullptr);
     if (!d) return;
