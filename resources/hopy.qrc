@@ -2,11 +2,9 @@
   <qresource prefix="/">
     <file>themes/dark.qss</file>
     <file>themes/light.qss</file>
-    <file>icons/tray.png</file>
     <file>icons/search.svg</file>
     <file>icons/settings.svg</file>
     <file>icons/help.svg</file>
-    <file>icons/info.svg</file>
     <file>icons/filter-text.svg</file>
     <file>icons/filter-image.svg</file>
     <file>icons/filter-files.svg</file>
@@ -14,6 +12,5 @@
     <file>icons/pin-to-top.svg</file>
     <file>icons/circle-x.svg</file>
     <file>icons/github.svg</file>
-    <file>icons/xiaohongshu.svg</file>
   </qresource>
 </RCC>

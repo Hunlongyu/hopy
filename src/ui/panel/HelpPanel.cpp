@@ -40,7 +40,7 @@ HelpPanel::HelpPanel(QWidget* parent) : QWidget(parent) {
         {"T", "切换置顶"},
         {"Delete / D", "删除选中项"},
         {"Esc", "隐藏窗口"},
-        {"M1 / M2", "预览翻页（鼠标侧键 上一页 / 下一页）"},
+        {"M4 / M5", "预览翻页（鼠标侧键 M4 下翻 / M5 上翻）"},
     };
 
     auto* grid = new QGridLayout();

@@ -147,8 +147,8 @@ void MainWindow::hidePreview() {
 
 bool MainWindow::pagePreview(Qt::MouseButton button) {
     if (!preview_ || !preview_->isVisible()) return false;
-    if (button == Qt::BackButton)    { preview_->page(-1); return true; }  // M1 → previous page
-    if (button == Qt::ForwardButton) { preview_->page(+1); return true; }  // M2 → next page
+    if (button == Qt::BackButton)    { preview_->page(+1); return true; }  // M4 (back)    → 下翻 next page
+    if (button == Qt::ForwardButton) { preview_->page(-1); return true; }  // M5 (forward) → 上翻 previous page
     return false;
 }
 
