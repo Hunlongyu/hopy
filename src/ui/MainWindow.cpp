@@ -7,6 +7,7 @@
 #include "ui/panel/HelpPanel.h"
 #include "ui/PreviewPopup.h"
 #include "ui/RecordListModel.h"
+#include "platform/ForegroundWindow.h"
 #include "util/Strings.h"
 #include "util/Icons.h"
 #include <QApplication>
@@ -41,6 +42,25 @@ namespace {
 // the icon colours correct.
 QToolButton* iconButton(const QString& svgName, const QString& tip, bool checkable = false) {
     return new IconButton(svgName, tip, checkable);
+}
+
+// The foreground window's text caret, converted from native/physical pixels to
+// Qt logical global coordinates. Returns false when there is no usable caret.
+bool caretAnchorLogical(QPoint& out) {
+    platform::CaretInfo ci;
+    if (!platform::queryCaret(ci)) return false;
+    // Match the caret's monitor to a QScreen by GDI device name; primary as fallback.
+    QScreen* target = nullptr;
+    for (QScreen* s : QGuiApplication::screens())
+        if (s->name() == ci.device) { target = s; break; }
+    if (!target) target = QGuiApplication::primaryScreen();
+    if (!target) return false;
+    const qreal dpr = target->devicePixelRatio();
+    // Anchor at the caret's bottom-left so the panel drops just below the line.
+    const QPoint physOff = QPoint(ci.caret.left(), ci.caret.bottom()) - ci.monitor.topLeft();
+    out = target->geometry().topLeft()
+        + QPoint(qRound(physOff.x() / dpr), qRound(physOff.y() / dpr));
+    return true;
 }
 } // namespace
 
@@ -277,7 +297,12 @@ void MainWindow::showAtCursor() {
     QList<QRect> geoms;
     for (QScreen* s : QGuiApplication::screens()) geoms << s->geometry();
     const auto mode = followCursor_ ? WindowPlacement::Cursor : WindowPlacement::Center;
-    setGeometry(placeWindow(QCursor::pos(), geoms, size(), mode));
+    // Capture the text caret NOW — the window has not shown yet, so the editor
+    // still owns the blinking caret. Fall back to the mouse pointer if there is
+    // no caret (non-text focus, or apps that draw their own caret).
+    QPoint anchor;
+    if (!(followCursor_ && caretAnchorLogical(anchor))) anchor = QCursor::pos();
+    setGeometry(placeWindow(anchor, geoms, size(), mode));
     search_->clear();
     updateFilterButtons();               // keep the last-used category (do not reset)
     applyFilter();
