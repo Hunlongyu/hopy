@@ -44,11 +44,11 @@ void Application::start() {
     monitor_->start();
 
     hotkey_->setShortcut(settings_.hotkey);
-    connect(hotkey_, &GlobalHotkey::activated, this, &Application::showWindow);
+    connect(hotkey_, &GlobalHotkey::activated, this, &Application::toggleWindow);
     connect(tray_, &TrayIcon::showRequested, this, &Application::showWindow);
     connect(tray_, &TrayIcon::quitRequested, qApp, &QCoreApplication::quit);
 
-    connect(window_, &MainWindow::hideRequested, window_, &QWidget::hide);
+    connect(window_, &MainWindow::hideRequested, this, &Application::dismissWindow);
     connect(paste_, &PasteService::hideWindowRequested, window_, &QWidget::hide);
     connect(window_, &MainWindow::confirmRequested, this, [this](qint64 id, bool plainText) {
         auto rec = repo_->getById(id);
@@ -155,6 +155,18 @@ void Application::showWindow() {
     paste_->captureBeforeShow();   // record the current foreground window BEFORE showing hopy
     refreshWindow();
     window_->showAtCursor();
+}
+
+void Application::toggleWindow() {
+    // Pressing the hotkey again while hopy is up dismisses it (and returns the
+    // caret to the editor) instead of re-capturing hopy as the target.
+    if (window_->isVisible()) dismissWindow();
+    else showWindow();
+}
+
+void Application::dismissWindow() {
+    paste_->restoreFocus();   // give the editor its focus + blinking caret back
+    window_->hide();
 }
 
 } // namespace hopy

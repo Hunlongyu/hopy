@@ -13,7 +13,14 @@ constexpr int kMaxWaitMs = 500;         // give up polling and paste anyway afte
 PasteService::PasteService(QObject* parent) : QObject(parent) {}
 
 void PasteService::captureBeforeShow() {
-    target_ = platform::captureForegroundWindow();
+    // Never target our own window: if hopy is already foreground (e.g. the hotkey
+    // is pressed again while it is up), keep the real editor we captured earlier.
+    const platform::WindowHandle fg = platform::captureForegroundWindow();
+    if (fg && !platform::isOwnWindow(fg)) target_ = fg;
+}
+
+void PasteService::restoreFocus() {
+    platform::restoreForegroundWindow(target_);
 }
 
 void PasteService::confirm(const ClipboardRecord& rec, ConfirmMode mode, bool plainText,

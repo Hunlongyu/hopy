@@ -29,6 +29,8 @@ private:
     void onPayloadCaptured(const CapturedPayload& p);
     void refreshWindow();
     void showWindow();
+    void toggleWindow();    // hotkey: show if hidden, dismiss if already up
+    void dismissWindow();   // hide + return focus/caret to the editor
 
     AppSettings settings_;
     std::unique_ptr<ClipboardRepository> repo_;

@@ -32,6 +32,12 @@ void restoreForegroundWindow(WindowHandle h) {
 bool isForegroundWindow(WindowHandle h) {
     return h && GetForegroundWindow() == reinterpret_cast<HWND>(h);
 }
+bool isOwnWindow(WindowHandle h) {
+    if (!h) return false;
+    DWORD pid = 0;
+    GetWindowThreadProcessId(reinterpret_cast<HWND>(h), &pid);
+    return pid == GetCurrentProcessId();
+}
 void sendPasteShortcut(bool plainText) {
     INPUT in[8] = {};
     int n = 0;
@@ -142,6 +148,7 @@ namespace hopy::platform {
 WindowHandle captureForegroundWindow() { return 0; }
 void restoreForegroundWindow(WindowHandle) {}
 bool isForegroundWindow(WindowHandle) { return true; }
+bool isOwnWindow(WindowHandle) { return false; }
 void sendPasteShortcut(bool plainText) {
     CGEventSourceRef src = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
     const CGKeyCode kV = 9;
@@ -181,6 +188,7 @@ void restoreForegroundWindow(WindowHandle h) {
     XCloseDisplay(d);
 }
 bool isForegroundWindow(WindowHandle) { return true; }
+bool isOwnWindow(WindowHandle) { return false; }
 void sendPasteShortcut(bool plainText) {
     Display* d = XOpenDisplay(nullptr);
     if (!d) return;

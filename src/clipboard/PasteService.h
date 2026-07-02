@@ -12,6 +12,7 @@ class PasteService : public QObject {
 public:
     explicit PasteService(QObject* parent = nullptr);
     void captureBeforeShow();
+    void restoreFocus();   // return focus (and the caret) to the captured target window
     void confirm(const ClipboardRecord& rec, ConfirmMode mode, bool plainText,
                  std::function<void()> onWritten);
 
