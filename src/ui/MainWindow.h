@@ -90,6 +90,7 @@ private:
     bool followCursor_ = true;   // window placement: follow cursor vs screen centre
     QPoint lastCaretAnchor_;     // last valid caret anchor (logical global px)
     QElapsedTimer caretTimer_;   // age of lastCaretAnchor_
+    QElapsedTimer lastHideTimer_;// time since the window was last hidden
 };
 
 } // namespace hopy

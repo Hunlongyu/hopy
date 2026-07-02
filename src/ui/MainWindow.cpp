@@ -300,14 +300,20 @@ void MainWindow::showAtCursor() {
     // Capture the text caret NOW — the window has not shown yet, so the editor
     // still owns the blinking caret.
     QPoint anchor;
-    if (followCursor_ && caretAnchorLogical(anchor)) {
-        lastCaretAnchor_ = anchor;           // remember a good caret position
+    const bool recentHide = lastHideTimer_.isValid() && lastHideTimer_.elapsed() < 800;
+    const bool haveGood   = caretTimer_.isValid() && caretTimer_.elapsed() < 8000;
+    if (followCursor_ && recentHide && haveGood) {
+        // Fast re-invocation: the editor was just refocused after a hide/paste and
+        // for ~1s its UIA caret is unreliable (reports a stale rect pinned to the
+        // control's top-left). Reuse the last good position instead of querying.
+        anchor = lastCaretAnchor_;
+    } else if (followCursor_ && caretAnchorLogical(anchor)) {
+        lastCaretAnchor_ = anchor;           // fresh, trustworthy caret
         caretTimer_.restart();
-    } else if (followCursor_ && caretTimer_.isValid() && caretTimer_.elapsed() < 4000) {
-        anchor = lastCaretAnchor_;           // caret momentarily unavailable (e.g. right
-                                             // after a paste) — reuse the last known one
+    } else if (haveGood) {
+        anchor = lastCaretAnchor_;           // transient miss → last good position
     } else {
-        anchor = QCursor::pos();             // no caret at all → mouse pointer
+        anchor = QCursor::pos();             // no caret ever seen → mouse pointer
     }
     setGeometry(placeWindow(anchor, geoms, size(), mode));
     search_->clear();
@@ -407,6 +413,7 @@ void MainWindow::keyReleaseEvent(QKeyEvent* ev) {
 
 void MainWindow::hideEvent(QHideEvent* ev) {
     hidePreview();
+    lastHideTimer_.restart();   // start the post-hide "caret unreliable" window
     QWidget::hideEvent(ev);
 }
 
