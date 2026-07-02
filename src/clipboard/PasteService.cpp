@@ -6,7 +6,8 @@ namespace hopy {
 
 namespace {
 constexpr int kClipboardSettleMs = 20;  // let clipboard ownership take effect
-constexpr int kFocusSettleMs = 60;      // wait for target window to regain focus before pasting
+constexpr int kPollMs = 15;             // how often to re-check the target has focus
+constexpr int kMaxWaitMs = 500;         // give up polling and paste anyway after this
 }
 
 PasteService::PasteService(QObject* parent) : QObject(parent) {}
@@ -26,16 +27,25 @@ void PasteService::confirm(const ClipboardRecord& rec, ConfirmMode mode, bool pl
         return;
     }
 
-    // (2) yield a frame so clipboard ownership settles, then hide + restore focus
+    // (2) yield a frame so clipboard ownership settles, then restore focus + hide.
+    // Restore the target FIRST — while we are still the foreground app the
+    // SetForegroundWindow call is allowed; then hide ourselves.
     QTimer::singleShot(kClipboardSettleMs, this, [this] {
-        emit hideWindowRequested();
         platform::restoreForegroundWindow(target_);
-
-        // (3) only after the target window regains focus, synthesize the paste key
-        QTimer::singleShot(kFocusSettleMs, this, [] {
-            platform::sendPasteShortcut(/*plainText already applied at write*/ false);
-        });
+        emit hideWindowRequested();
+        pasteWhenFocused(0);
     });
+}
+
+void PasteService::pasteWhenFocused(int waitedMs) {
+    // (3) paste only once the target really holds focus — a fixed delay sometimes
+    // fired before the editor was ready, dropping the paste ("回车后没有输出").
+    if (platform::isForegroundWindow(target_) || waitedMs >= kMaxWaitMs) {
+        platform::sendPasteShortcut(/*plainText already applied at write*/ false);
+        return;
+    }
+    platform::restoreForegroundWindow(target_);   // nudge again if it hasn't taken
+    QTimer::singleShot(kPollMs, this, [this, waitedMs] { pasteWhenFocused(waitedMs + kPollMs); });
 }
 
 } // namespace hopy

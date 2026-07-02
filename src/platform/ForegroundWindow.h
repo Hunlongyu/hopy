@@ -6,6 +6,7 @@ namespace hopy::platform {
 using WindowHandle = quintptr;
 WindowHandle captureForegroundWindow();
 void restoreForegroundWindow(WindowHandle h);
+bool isForegroundWindow(WindowHandle h);   // true once h is actually the foreground window
 void sendPasteShortcut(bool plainText);
 
 // Text-caret (the blinking insertion bar) of the current foreground window, in

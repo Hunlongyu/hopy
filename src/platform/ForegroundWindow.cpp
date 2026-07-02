@@ -10,7 +10,27 @@ WindowHandle captureForegroundWindow() {
     return reinterpret_cast<WindowHandle>(GetForegroundWindow());
 }
 void restoreForegroundWindow(WindowHandle h) {
-    if (h) SetForegroundWindow(reinterpret_cast<HWND>(h));
+    if (!h) return;
+    HWND target = reinterpret_cast<HWND>(h);
+    if (IsIconic(target)) ShowWindow(target, SW_RESTORE);
+    // Windows blocks SetForegroundWindow once we are no longer the foreground app.
+    // Attaching our input queue to the current-foreground and target threads makes
+    // the call honoured, which is what reliably brings the editor back so the
+    // synthesized Ctrl+V lands in it.
+    const DWORD self = GetCurrentThreadId();
+    HWND fg = GetForegroundWindow();
+    const DWORD fgT  = fg ? GetWindowThreadProcessId(fg, nullptr) : 0;
+    const DWORD tgtT = GetWindowThreadProcessId(target, nullptr);
+    const bool aFg  = fgT  && fgT  != self && AttachThreadInput(self, fgT,  TRUE);
+    const bool aTgt = tgtT && tgtT != self && tgtT != fgT && AttachThreadInput(self, tgtT, TRUE);
+    AllowSetForegroundWindow(ASFW_ANY);
+    BringWindowToTop(target);
+    SetForegroundWindow(target);
+    if (aTgt) AttachThreadInput(self, tgtT, FALSE);
+    if (aFg)  AttachThreadInput(self, fgT,  FALSE);
+}
+bool isForegroundWindow(WindowHandle h) {
+    return h && GetForegroundWindow() == reinterpret_cast<HWND>(h);
 }
 void sendPasteShortcut(bool plainText) {
     INPUT in[8] = {};
@@ -121,6 +141,7 @@ bool queryCaret(CaretInfo& out) {
 namespace hopy::platform {
 WindowHandle captureForegroundWindow() { return 0; }
 void restoreForegroundWindow(WindowHandle) {}
+bool isForegroundWindow(WindowHandle) { return true; }
 void sendPasteShortcut(bool plainText) {
     CGEventSourceRef src = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
     const CGKeyCode kV = 9;
@@ -159,6 +180,7 @@ void restoreForegroundWindow(WindowHandle h) {
     XFlush(d);
     XCloseDisplay(d);
 }
+bool isForegroundWindow(WindowHandle) { return true; }
 void sendPasteShortcut(bool plainText) {
     Display* d = XOpenDisplay(nullptr);
     if (!d) return;

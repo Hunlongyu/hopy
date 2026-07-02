@@ -19,6 +19,8 @@ signals:
     void hideWindowRequested();
 
 private:
+    void pasteWhenFocused(int waitedMs);   // poll target foreground, then Ctrl+V
+
     platform::WindowHandle target_ = 0;
 };
 
