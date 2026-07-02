@@ -1,0 +1,7 @@
+/build/
+/build-*/
+*.user
+CMakeCache.txt
+CMakeFiles/
+.cache/
+compile_commands.json

@@ -1,0 +1,23 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21 },
+  "configurePresets": [
+    {
+      "name": "win-static-release",
+      "displayName": "Windows static single-file (MSVC 2026 x64)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/win-static-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_PREFIX_PATH": "D:/QtStatic/6.11.1-static/msvc2026_64_RP"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "win-static-release", "configurePreset": "win-static-release" }
+  ],
+  "testPresets": [
+    { "name": "win-static-release", "configurePreset": "win-static-release",
+      "output": { "outputOnFailure": true } }
+  ]
+}

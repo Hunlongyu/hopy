@@ -1,0 +1,59 @@
+/* Ropy Dark palette: bg #2d2d2d, cards #3c3c3c, input #555, border #4d4d4d, accent #6b8cff */
+QWidget { color: #f0f0f0; }
+#Root { background: #2d2d2d; border-radius: 12px; }
+QLabel#Title { font-size: 20px; font-weight: bold; color: #ffffff; }
+QLabel#PanelTitle { font-size: 16px; font-weight: 600; color: #ffffff; }
+
+QLineEdit {
+    background: #3c3c3c;
+    color: #f0f0f0;
+    border: 1px solid #4d4d4d;
+    border-radius: 6px;
+    padding: 4px 10px;
+    selection-background-color: #6b8cff;
+}
+QLineEdit#SearchBox { border: 1px solid #555555; border-radius: 18px; padding: 8px 14px; }
+QToolButton[inSearch="true"] { color: #888888; background: transparent; border: none; padding: 2px 5px; font-size: 13px; }
+QToolButton[inSearch="true"]:hover { color: #f0f0f0; background: transparent; }
+QToolButton[inSearch="true"]:checked { color: #6b8cff; background: transparent; }
+
+QToolButton {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 7px;
+    color: #cfcfcf;
+    font-size: 14px;
+}
+QToolButton:hover { background: transparent; }   /* no bg on hover; icon brightens via QIcon::Active */
+QToolButton:checked { background: #6b8cff; color: #ffffff; }
+
+#FilterGroup { background: #3c3c3c; border-radius: 8px; }
+
+QListView { background: transparent; border: none; }
+
+QGroupBox { border: 1px solid #4d4d4d; border-radius: 8px; margin-top: 8px; padding: 8px; }
+QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; color: #888888; }
+
+QPushButton { background: #3c3c3c; border: 1px solid #4d4d4d; border-radius: 6px; padding: 6px 12px; color: #f0f0f0; }
+QPushButton:hover { background: #4d4d4d; }
+
+QComboBox { background: #3c3c3c; border: 1px solid #4d4d4d; border-radius: 6px; padding: 4px 10px; color: #f0f0f0; }
+QComboBox::drop-down { width: 0; border: none; }
+QComboBox::down-arrow { image: none; width: 0; height: 0; }
+QComboBox QAbstractItemView { background: #353535; color: #f0f0f0; selection-background-color: #6b8cff; }
+QSpinBox { background: #3c3c3c; border: 1px solid #4d4d4d; border-radius: 6px; padding: 3px 8px; color: #f0f0f0; }
+QSpinBox::up-button, QSpinBox::down-button { width: 0; border: none; }
+QKeySequenceEdit QLineEdit { background: #3c3c3c; }
+
+#SettingCard { background: #3c3c3c; border-radius: 10px; }
+#PreviewCard { background: #2d2d2d; border: 1px solid #4d4d4d; border-radius: 10px; color: #f0f0f0; }
+#PreviewCard { background: #353535; border: 1px solid #4d4d4d; border-radius: 10px; color: #f0f0f0; }
+#CardTitle { color: #888888; font-size: 12px; }
+#RowDivider { background: rgba(255, 255, 255, 0.06); border: none; }
+#KeyCap { background: rgba(255, 255, 255, 0.10); border-radius: 6px; padding: 7px 14px; min-width: 64px; color: #f0f0f0; }
+
+/* Hide all scrollbars (content still scrolls with the wheel) */
+QScrollBar:vertical, QScrollBar:horizontal { width: 0px; height: 0px; background: transparent; }
+QScrollBar::handle, QScrollBar::add-line, QScrollBar::sub-line,
+QScrollBar::add-page, QScrollBar::sub-page { width: 0px; height: 0px; background: transparent; border: none; }
