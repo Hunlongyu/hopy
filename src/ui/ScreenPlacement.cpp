@@ -4,9 +4,11 @@
 
 namespace hopy {
 
-QRect placeWindow(const QPoint& cursor, const QList<QRect>& screens, const QSize& win) {
+QRect placeWindow(const QPoint& cursor, const QList<QRect>& screens, const QSize& win,
+                  WindowPlacement mode) {
     if (screens.isEmpty()) return QRect(QPoint(0, 0), win);
 
+    // Pick the screen under the cursor, else the one whose centre is nearest.
     const QRect* chosen = nullptr;
     for (const QRect& g : screens) {
         if (g.contains(cursor)) { chosen = &g; break; }
@@ -22,10 +24,21 @@ QRect placeWindow(const QPoint& cursor, const QList<QRect>& screens, const QSize
         }
     }
 
-    int x = chosen->center().x() - win.width() / 2;
-    int y = chosen->center().y() - win.height() / 2;
+    int x, y;
+    if (mode == WindowPlacement::Cursor) {
+        // Open down-right of the cursor like Win+V; flip to the other side when
+        // there isn't room, so the panel never spills off the screen edge.
+        x = cursor.x();
+        y = cursor.y();
+        if (x + win.width()  > chosen->right()  + 1) x = cursor.x() - win.width();
+        if (y + win.height() > chosen->bottom() + 1) y = cursor.y() - win.height();
+    } else {
+        x = chosen->center().x() - win.width() / 2;
+        y = chosen->center().y() - win.height() / 2;
+    }
 
-    if (win.width() >= chosen->width())  x = chosen->left();
+    // Clamp fully inside the chosen screen (also handles window-larger-than-screen).
+    if (win.width() >= chosen->width())   x = chosen->left();
     else x = std::clamp(x, chosen->left(), chosen->right() - win.width() + 1);
     if (win.height() >= chosen->height()) y = chosen->top();
     else y = std::clamp(y, chosen->top(), chosen->bottom() - win.height() + 1);

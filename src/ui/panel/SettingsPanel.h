@@ -29,6 +29,7 @@ private:
     AppSettings current_;
     bool loading_ = false;
     QComboBox* theme_ = nullptr;
+    QComboBox* placement_ = nullptr;
     QComboBox* previewSide_ = nullptr;
     HotkeyEdit* hotkey_ = nullptr;
     QCheckBox* pasteImmediate_ = nullptr;

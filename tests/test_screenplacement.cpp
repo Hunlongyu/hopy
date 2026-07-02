@@ -30,6 +30,26 @@ private slots:
         QRect r = placeWindow(QPoint(10,10), {}, QSize(400,600));
         QCOMPARE(r.topLeft(), QPoint(0,0));
     }
+
+    // ── Cursor mode: anchor at cursor, flip/clamp near edges ──
+    void cursorModeAnchorsAtCursor() {
+        QRect r = placeWindow(QPoint(200,200), screens_, QSize(400,600), WindowPlacement::Cursor);
+        QCOMPARE(r.topLeft(), QPoint(200,200));
+    }
+    void cursorModeFlipsLeftNearRightEdge() {
+        QRect r = placeWindow(QPoint(1900,200), screens_, QSize(400,600), WindowPlacement::Cursor);
+        QCOMPARE(r.topLeft(), QPoint(1500,200));           // 1900-400
+        QVERIFY(screens_[0].contains(r));
+    }
+    void cursorModeFlipsUpNearBottomEdge() {
+        QRect r = placeWindow(QPoint(200,1000), screens_, QSize(400,600), WindowPlacement::Cursor);
+        QCOMPARE(r.topLeft(), QPoint(200,400));            // 1000-600
+        QVERIFY(screens_[0].contains(r));
+    }
+    void cursorModeStaysOnCursorScreen() {
+        QRect r = placeWindow(QPoint(2500,900), screens_, QSize(400,600), WindowPlacement::Cursor);
+        QVERIFY(screens_[1].contains(r));                  // second monitor
+    }
 };
 QTEST_APPLESS_MAIN(TestScreenPlacement)
 #include "test_screenplacement.moc"

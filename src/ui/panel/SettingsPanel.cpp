@@ -87,6 +87,10 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     theme_->addItem(QStringLiteral("深色"), "dark");
     theme_->addItem(QStringLiteral("浅色"), "light");
     theme_->setFixedWidth(120);
+    placement_ = new QComboBox();
+    placement_->addItem(QStringLiteral("跟随光标"), "cursor");
+    placement_->addItem(QStringLiteral("屏幕中央"), "center");
+    placement_->setFixedWidth(120);
     previewSide_ = new QComboBox();
     previewSide_->addItem(QStringLiteral("左侧"), "left");
     previewSide_->addItem(QStringLiteral("右侧"), "right");
@@ -105,6 +109,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
 
     QVBoxLayout* ap; auto* apCard = makeCard(QStringLiteral("外观"), ap);
     addRow(ap, QStringLiteral("主题"), theme_, true);
+    addRow(ap, QStringLiteral("显示位置"), placement_, true);
     addRow(ap, QStringLiteral("预览位置"), previewSide_, true);
     addRow(ap, QStringLiteral("不透明度"), opacity_, false);
     col->addWidget(apCard);
@@ -165,6 +170,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     root->addWidget(scroll);
 
     connect(theme_, &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
+    connect(placement_, &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
     connect(previewSide_, &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
     connect(opacity_, &QSlider::valueChanged, this, [this] { emitChange(); });
     connect(hotkey_, &HotkeyEdit::keySequenceChanged, this, [this] { emitChange(); });
@@ -178,6 +184,7 @@ void SettingsPanel::setSettings(const AppSettings& s) {
     loading_ = true;
     current_ = s;
     theme_->setCurrentIndex(s.theme == "light" ? 1 : 0);
+    placement_->setCurrentIndex(s.windowPlacement == "center" ? 1 : 0);
     previewSide_->setCurrentIndex(s.previewSide == "right" ? 1 : 0);
     opacity_->setValue(s.windowOpacity);
     hotkey_->setKeySequence(QKeySequence(s.hotkey));
@@ -194,6 +201,7 @@ void SettingsPanel::emitChange() {
     if (loading_) return;
     AppSettings s = current_;
     s.theme = theme_->currentData().toString();
+    s.windowPlacement = placement_->currentData().toString();
     s.previewSide = previewSide_->currentData().toString();
     s.windowOpacity = opacity_->value();
     s.hotkey = hotkey_->keySequence().toString();   // may be empty = no global hotkey

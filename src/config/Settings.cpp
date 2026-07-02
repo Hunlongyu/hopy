@@ -21,10 +21,12 @@ AppSettings Settings::fromJson(const QByteArray& json) {
     if (o.contains("hoverPreview")) s.hoverPreview = o["hoverPreview"].toBool(s.hoverPreview);
     if (o.contains("spacePreview")) s.spacePreview = o["spacePreview"].toBool(s.spacePreview);
     if (o.contains("previewSide"))  s.previewSide = o["previewSide"].toString(s.previewSide);
+    if (o.contains("windowPlacement")) s.windowPlacement = o["windowPlacement"].toString(s.windowPlacement);
     if (o.contains("windowOpacity"))s.windowOpacity = o["windowOpacity"].toInt(s.windowOpacity);
 
     if (s.theme != "dark" && s.theme != "light") s.theme = "dark";
     if (s.previewSide != "left" && s.previewSide != "right") s.previewSide = "left";
+    if (s.windowPlacement != "cursor" && s.windowPlacement != "center") s.windowPlacement = "cursor";
     s.maxHistory = std::clamp(s.maxHistory, 10, 1000);
     s.maxStorage = std::clamp(s.maxStorage, 10, 1000);
     if (s.maxStorage < s.maxHistory) s.maxStorage = s.maxHistory;
@@ -43,6 +45,7 @@ QByteArray Settings::toJson(const AppSettings& s) {
     o["hoverPreview"] = s.hoverPreview;
     o["spacePreview"] = s.spacePreview;
     o["previewSide"] = s.previewSide;
+    o["windowPlacement"] = s.windowPlacement;
     o["windowOpacity"] = s.windowOpacity;
     return QJsonDocument(o).toJson(QJsonDocument::Indented);
 }

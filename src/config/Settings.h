@@ -16,6 +16,7 @@ struct AppSettings {
     bool hoverPreview = true;
     bool spacePreview = true;
     QString previewSide = "left"; // "left" | "right"
+    QString windowPlacement = "cursor"; // "cursor" (follow) | "center"
     int windowOpacity = 100;     // 40..100
 };
 

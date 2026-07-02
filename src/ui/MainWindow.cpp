@@ -132,6 +132,7 @@ void MainWindow::setSettings(const AppSettings& s) {
     hoverPreview_ = s.hoverPreview;
     spacePreview_ = s.spacePreview;
     previewLeft_ = (s.previewSide != "right");
+    followCursor_ = (s.windowPlacement != "center");
 }
 
 void MainWindow::showPreviewRow(int row) {
@@ -275,7 +276,8 @@ void MainWindow::showAtCursor() {
     stack_->setCurrentIndex(0);          // always open on the list page
     QList<QRect> geoms;
     for (QScreen* s : QGuiApplication::screens()) geoms << s->geometry();
-    setGeometry(placeWindow(QCursor::pos(), geoms, size()));
+    const auto mode = followCursor_ ? WindowPlacement::Cursor : WindowPlacement::Center;
+    setGeometry(placeWindow(QCursor::pos(), geoms, size(), mode));
     search_->clear();
     updateFilterButtons();               // keep the last-used category (do not reset)
     applyFilter();

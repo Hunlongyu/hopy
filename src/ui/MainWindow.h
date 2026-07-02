@@ -85,6 +85,7 @@ private:
     bool hoverPreview_ = true;
     bool spacePreview_ = true;
     bool previewLeft_ = true;
+    bool followCursor_ = true;   // window placement: follow cursor vs screen centre
 };
 
 } // namespace hopy
