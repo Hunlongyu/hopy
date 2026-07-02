@@ -15,6 +15,8 @@ class QTimer;
 
 namespace hopy {
 
+namespace platform { class InputHook; }
+
 class RecordListModel;
 class SettingsPanel;
 class HelpPanel;
@@ -88,9 +90,9 @@ private:
     bool spacePreview_ = true;
     bool previewLeft_ = true;
     bool followCursor_ = true;   // window placement: follow cursor vs screen centre
-    QPoint lastCaretAnchor_;     // last valid caret anchor (logical global px)
-    QElapsedTimer caretTimer_;   // age of lastCaretAnchor_
-    QElapsedTimer lastHideTimer_;// time since the window was last hidden
+    bool searchMode_ = false;    // "/" pressed → subsequent keys type into the search box
+    QElapsedTimer showTimer_;    // debounce the foreground-change auto-hide right after showing
+    platform::InputHook* inputHook_ = nullptr;
 };
 
 } // namespace hopy

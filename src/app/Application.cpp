@@ -48,7 +48,7 @@ void Application::start() {
     connect(tray_, &TrayIcon::showRequested, this, &Application::showWindow);
     connect(tray_, &TrayIcon::quitRequested, qApp, &QCoreApplication::quit);
 
-    connect(window_, &MainWindow::hideRequested, this, &Application::dismissWindow);
+    connect(window_, &MainWindow::hideRequested, window_, &QWidget::hide);
     connect(paste_, &PasteService::hideWindowRequested, window_, &QWidget::hide);
     connect(window_, &MainWindow::confirmRequested, this, [this](qint64 id, bool plainText) {
         auto rec = repo_->getById(id);
@@ -152,21 +152,15 @@ void Application::refreshWindow() {
 }
 
 void Application::showWindow() {
-    paste_->captureBeforeShow();   // record the current foreground window BEFORE showing hopy
+    // No foreground capture needed: hopy shows without activating, so the editor
+    // stays foreground with a live caret the whole time.
     refreshWindow();
     window_->showAtCursor();
 }
 
 void Application::toggleWindow() {
-    // Pressing the hotkey again while hopy is up dismisses it (and returns the
-    // caret to the editor) instead of re-capturing hopy as the target.
-    if (window_->isVisible()) dismissWindow();
+    if (window_->isVisible()) window_->hide();   // hotkey again dismisses
     else showWindow();
-}
-
-void Application::dismissWindow() {
-    paste_->restoreFocus();   // give the editor its focus + blinking caret back
-    window_->hide();
 }
 
 } // namespace hopy

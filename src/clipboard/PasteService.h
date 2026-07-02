@@ -11,18 +11,11 @@ class PasteService : public QObject {
     Q_OBJECT
 public:
     explicit PasteService(QObject* parent = nullptr);
-    void captureBeforeShow();
-    void restoreFocus();   // return focus (and the caret) to the captured target window
     void confirm(const ClipboardRecord& rec, ConfirmMode mode, bool plainText,
                  std::function<void()> onWritten);
 
 signals:
     void hideWindowRequested();
-
-private:
-    void pasteWhenFocused(int waitedMs);   // poll target foreground, then Ctrl+V
-
-    platform::WindowHandle target_ = 0;
 };
 
 } // namespace hopy

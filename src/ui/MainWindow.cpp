@@ -8,6 +8,7 @@
 #include "ui/PreviewPopup.h"
 #include "ui/RecordListModel.h"
 #include "platform/ForegroundWindow.h"
+#include "platform/InputHook.h"
 #include "util/Strings.h"
 #include "util/Icons.h"
 #include <QApplication>
@@ -65,10 +66,23 @@ bool caretAnchorLogical(QPoint& out) {
 } // namespace
 
 MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
-    setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint);
+    // Non-activating: the window never steals focus, so the editor keeps its live
+    // blinking caret (accurate placement + reliable paste). Keyboard navigation
+    // arrives via the low-level hook in inputHook_ instead of OS focus.
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint
+                   | Qt::WindowDoesNotAcceptFocus);
     setAttribute(Qt::WA_TranslucentBackground);  // transparent margin so the shadow shows
-    setFocusPolicy(Qt::StrongFocus);             // window takes keyboard focus (not the search box)
+    setAttribute(Qt::WA_ShowWithoutActivating);  // showing must not activate us
+    setFocusPolicy(Qt::NoFocus);
     resize(400, 550);
+
+    inputHook_ = new platform::InputHook(this);
+    connect(inputHook_, &platform::InputHook::foregroundChanged, this, [this] {
+        // The user switched to another window (click / Alt-Tab) → dismiss. Ignore
+        // the burst that can fire right as we appear.
+        if (isVisible() && (!showTimer_.isValid() || showTimer_.elapsed() > 200))
+            hide();
+    });
 
     // Rounded content container with a drop shadow inside a transparent margin.
     auto* root = new QWidget(this);
@@ -108,7 +122,7 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
     hoverTimer_->setSingleShot(true);
     hoverTimer_->setInterval(180);
     connect(hoverTimer_, &QTimer::timeout, this, [this] {
-        if (hoverPreview_ && hoverRow_ >= 0 && isActiveWindow()) showPreviewRow(hoverRow_);
+        if (hoverPreview_ && hoverRow_ >= 0 && isVisible()) showPreviewRow(hoverRow_);
     });
     list_->setMouseTracking(true);
     connect(list_, &QListView::entered, this, [this](const QModelIndex& i) {
@@ -172,7 +186,7 @@ bool MainWindow::pagePreview(Qt::MouseButton button) {
     return false;
 }
 
-void MainWindow::showList()     { stack_->setCurrentIndex(0); setFocus(); }
+void MainWindow::showList()     { stack_->setCurrentIndex(0); }
 void MainWindow::showSettings() { stack_->setCurrentIndex(1); }
 void MainWindow::showHelp()     { stack_->setCurrentIndex(2); }
 
@@ -297,30 +311,19 @@ void MainWindow::showAtCursor() {
     QList<QRect> geoms;
     for (QScreen* s : QGuiApplication::screens()) geoms << s->geometry();
     const auto mode = followCursor_ ? WindowPlacement::Cursor : WindowPlacement::Center;
-    // Capture the text caret NOW — the window has not shown yet, so the editor
-    // still owns the blinking caret.
+    // We never steal focus, so the editor still owns a live caret — read it now.
+    // It is reliable every time (no post-paste settling), falling back to the
+    // mouse only for genuinely caret-less contexts.
     QPoint anchor;
-    const bool recentHide = lastHideTimer_.isValid() && lastHideTimer_.elapsed() < 800;
-    const bool haveGood   = caretTimer_.isValid() && caretTimer_.elapsed() < 8000;
-    if (followCursor_ && recentHide && haveGood) {
-        // Fast re-invocation: the editor was just refocused after a hide/paste and
-        // for ~1s its UIA caret is unreliable (reports a stale rect pinned to the
-        // control's top-left). Reuse the last good position instead of querying.
-        anchor = lastCaretAnchor_;
-    } else if (followCursor_ && caretAnchorLogical(anchor)) {
-        lastCaretAnchor_ = anchor;           // fresh, trustworthy caret
-        caretTimer_.restart();
-    } else if (haveGood) {
-        anchor = lastCaretAnchor_;           // transient miss → last good position
-    } else {
-        anchor = QCursor::pos();             // no caret ever seen → mouse pointer
-    }
+    if (!(followCursor_ && caretAnchorLogical(anchor))) anchor = QCursor::pos();
     setGeometry(placeWindow(anchor, geoms, size(), mode));
     search_->clear();
+    searchMode_ = false;
     updateFilterButtons();               // keep the last-used category (do not reset)
     applyFilter();
-    show(); raise(); activateWindow();
-    setFocus();   // window keeps keyboard focus for nav; search box not auto-focused (no caret blink)
+    showTimer_.restart();
+    show(); raise();                     // shown WITHOUT activating (WA_ShowWithoutActivating)
+    inputHook_->start(this);             // route keyboard here while visible
 }
 
 void MainWindow::moveSelection(int delta) {
@@ -361,14 +364,14 @@ bool MainWindow::handleNavKey(QKeyEvent* ev) {
         case Qt::Key_Return:
         case Qt::Key_Enter:   confirmCurrent(shift); return true;
         case Qt::Key_Slash:
-            if (!search_->hasFocus()) { search_->setFocus(); return true; }
-            return false;     // already in the search box: let "/" be typed
+            if (!searchMode_) { searchMode_ = true; return true; }  // "/" enters search
+            return false;                                          // in search: let "/" type
         case Qt::Key_Escape:  emit hideRequested(); return true;
         case Qt::Key_Delete:  { const qint64 id = currentId(); if (id) emit deleteRequested(id); return true; }
         default: break;
     }
 
-    if (search_->text().isEmpty()) {
+    if (!searchMode_) {   // single-key shortcuts only when not typing a search
         switch (key) {
             case Qt::Key_F: { const qint64 id = currentId(); if (id) emit favoriteToggleRequested(id); return true; }
             case Qt::Key_D: { const qint64 id = currentId(); if (id) emit deleteRequested(id); return true; }
@@ -399,11 +402,18 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* ev) {
-    if (ev->key() == Qt::Key_Space && !ev->isAutoRepeat() && !search_->hasFocus()) {
+    if (ev->key() == Qt::Key_Space && !ev->isAutoRepeat() && !searchMode_) {
         if (spacePreview_) showPreviewRow(list_->currentIndex().row());
         return;
     }
-    if (!handleNavKey(ev)) QWidget::keyPressEvent(ev);
+    if (handleNavKey(ev)) return;
+    // Unhandled key while searching → edit the query (the box has no OS focus).
+    if (searchMode_) {
+        if (ev->key() == Qt::Key_Backspace) { search_->backspace(); return; }
+        const QString t = ev->text();
+        if (!t.isEmpty() && t[0].isPrint()) { search_->insert(t); return; }
+    }
+    QWidget::keyPressEvent(ev);
 }
 
 void MainWindow::keyReleaseEvent(QKeyEvent* ev) {
@@ -413,7 +423,7 @@ void MainWindow::keyReleaseEvent(QKeyEvent* ev) {
 
 void MainWindow::hideEvent(QHideEvent* ev) {
     hidePreview();
-    lastHideTimer_.restart();   // start the post-hide "caret unreliable" window
+    inputHook_->stop();   // release the keyboard so other apps type normally again
     QWidget::hideEvent(ev);
 }
 
@@ -422,17 +432,7 @@ void MainWindow::changeEvent(QEvent* ev) {
         searchIcon_->setPixmap(icons::svgPixmap(QStringLiteral("search"),
                                                 palette().color(QPalette::Mid), 16));
     }
-    if (ev->type() == QEvent::ActivationChange && isVisible() && !isActiveWindow()) {
-        // Lost activation. Defer the check so our own popups (combobox/menu) or
-        // panel switches don't count — only hide when focus really left the app.
-        QTimer::singleShot(0, this, [this] {
-            if (isVisible() && !isActiveWindow()
-                && !QApplication::activePopupWidget()
-                && !QApplication::activeWindow()) {
-                hide();
-            }
-        });
-    }
+    // Auto-hide is driven by the foreground-change hook now (we never activate).
     QWidget::changeEvent(ev);
 }
 
