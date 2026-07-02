@@ -129,8 +129,15 @@ bool caretRectViaGuiThread(RECT& out) {
 bool queryCaret(CaretInfo& out) {
     RECT rc{};
     if (!caretRectViaUIA(rc) && !caretRectViaGuiThread(rc)) return false;
+    const POINT center{ (rc.left + rc.right) / 2, (rc.top + rc.bottom) / 2 };
+    // Reject transitional/garbage rects: right after a paste + refocus UIA can
+    // momentarily report a caret near the origin. A genuine caret lies inside the
+    // foreground window — if it doesn't, treat it as "no caret" and let the caller
+    // fall back rather than anchoring the window to the top-left corner.
+    HWND fg = GetForegroundWindow();
+    RECT wr{};
+    if (!fg || !GetWindowRect(fg, &wr) || !PtInRect(&wr, center)) return false;
     out.caret = QRect(QPoint(rc.left, rc.top), QPoint(rc.right, rc.bottom));
-    POINT center{ (rc.left + rc.right) / 2, (rc.top + rc.bottom) / 2 };
     MONITORINFOEXW mi{};
     mi.cbSize = sizeof(mi);
     if (!GetMonitorInfoW(MonitorFromPoint(center, MONITOR_DEFAULTTONEAREST), &mi))

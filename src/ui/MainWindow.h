@@ -1,5 +1,7 @@
 #pragma once
 #include <QWidget>
+#include <QPoint>
+#include <QElapsedTimer>
 #include "storage/Record.h"
 #include "ui/TypeFilter.h"
 #include "config/Settings.h"
@@ -86,6 +88,8 @@ private:
     bool spacePreview_ = true;
     bool previewLeft_ = true;
     bool followCursor_ = true;   // window placement: follow cursor vs screen centre
+    QPoint lastCaretAnchor_;     // last valid caret anchor (logical global px)
+    QElapsedTimer caretTimer_;   // age of lastCaretAnchor_
 };
 
 } // namespace hopy

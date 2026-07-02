@@ -298,10 +298,17 @@ void MainWindow::showAtCursor() {
     for (QScreen* s : QGuiApplication::screens()) geoms << s->geometry();
     const auto mode = followCursor_ ? WindowPlacement::Cursor : WindowPlacement::Center;
     // Capture the text caret NOW — the window has not shown yet, so the editor
-    // still owns the blinking caret. Fall back to the mouse pointer if there is
-    // no caret (non-text focus, or apps that draw their own caret).
+    // still owns the blinking caret.
     QPoint anchor;
-    if (!(followCursor_ && caretAnchorLogical(anchor))) anchor = QCursor::pos();
+    if (followCursor_ && caretAnchorLogical(anchor)) {
+        lastCaretAnchor_ = anchor;           // remember a good caret position
+        caretTimer_.restart();
+    } else if (followCursor_ && caretTimer_.isValid() && caretTimer_.elapsed() < 4000) {
+        anchor = lastCaretAnchor_;           // caret momentarily unavailable (e.g. right
+                                             // after a paste) — reuse the last known one
+    } else {
+        anchor = QCursor::pos();             // no caret at all → mouse pointer
+    }
     setGeometry(placeWindow(anchor, geoms, size(), mode));
     search_->clear();
     updateFilterButtons();               // keep the last-used category (do not reset)
