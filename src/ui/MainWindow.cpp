@@ -10,6 +10,7 @@
 #include "platform/ForegroundWindow.h"
 #include "platform/InputHook.h"
 #include "util/Strings.h"
+#include <algorithm>
 #include "util/Icons.h"
 #include <QApplication>
 #include <QIcon>
@@ -50,17 +51,46 @@ QToolButton* iconButton(const QString& svgName, const QString& tip, bool checkab
 bool caretAnchorLogical(QPoint& out) {
     platform::CaretInfo ci;
     if (!platform::queryCaret(ci)) return false;
-    // Match the caret's monitor to a QScreen by GDI device name; primary as fallback.
-    QScreen* target = nullptr;
-    for (QScreen* s : QGuiApplication::screens())
-        if (s->name() == ci.device) { target = s; break; }
-    if (!target) target = QGuiApplication::primaryScreen();
-    if (!target) return false;
-    const qreal dpr = target->devicePixelRatio();
     // Anchor at the caret's bottom-left so the panel drops just below the line.
-    const QPoint physOff = QPoint(ci.caret.left(), ci.caret.bottom()) - ci.monitor.topLeft();
-    out = target->geometry().topLeft()
-        + QPoint(qRound(physOff.x() / dpr), qRound(physOff.y() / dpr));
+    const QPoint physAnchor(ci.caret.left(), ci.caret.bottom());
+
+    // Which PHYSICAL monitor holds the caret (Win32 pixels)?
+    const QList<platform::MonitorInfo> monitors = platform::physicalMonitors();
+    int mi = -1;
+    for (int i = 0; i < monitors.size(); ++i)
+        if (monitors[i].rect.contains(physAnchor)) { mi = i; break; }
+    if (mi < 0) return false;
+    const QRect physMon = monitors[mi].rect;
+
+    // Map that physical monitor to its QScreen — by GDI device name, and if that
+    // fails (names don't always line up) by spatial rank. Relying on names alone
+    // is what sent the window to the wrong monitor before.
+    const QList<QScreen*> screens = QGuiApplication::screens();
+    QScreen* target = nullptr;
+    for (QScreen* s : screens)
+        if (s->name() == monitors[mi].device) { target = s; break; }
+    if (!target && !screens.isEmpty()) {
+        auto before = [](QPoint a, QPoint b) {
+            return a.y() < b.y() || (a.y() == b.y() && a.x() < b.x());
+        };
+        int rank = 0;
+        for (int i = 0; i < monitors.size(); ++i)
+            if (i != mi && before(monitors[i].rect.topLeft(), physMon.topLeft())) ++rank;
+        QList<QScreen*> ss = screens;
+        std::sort(ss.begin(), ss.end(), [&](QScreen* a, QScreen* b) {
+            return before(a->geometry().topLeft(), b->geometry().topLeft());
+        });
+        if (rank < ss.size()) target = ss[rank];
+    }
+    if (!target) return false;
+
+    // Fractional position within the physical monitor → same fraction of the
+    // logical monitor. DPI-agnostic; no per-screen scale maths.
+    const QRect logi = target->geometry();
+    const double fx = physMon.width()  ? double(physAnchor.x() - physMon.x()) / physMon.width()  : 0.0;
+    const double fy = physMon.height() ? double(physAnchor.y() - physMon.y()) / physMon.height() : 0.0;
+    out = QPoint(logi.x() + qRound(fx * logi.width()),
+                 logi.y() + qRound(fy * logi.height()));
     return true;
 }
 } // namespace
@@ -77,9 +107,9 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
     resize(400, 550);
 
     inputHook_ = new platform::InputHook(this);
-    connect(inputHook_, &platform::InputHook::foregroundChanged, this, [this] {
-        // The user switched to another window (click / Alt-Tab) → dismiss. Ignore
-        // the burst that can fire right as we appear.
+    connect(inputHook_, &platform::InputHook::dismissRequested, this, [this] {
+        // Clicked away / switched windows → dismiss. Ignore the burst that can
+        // fire right as we appear.
         if (isVisible() && (!showTimer_.isValid() || showTimer_.elapsed() > 200))
             hide();
     });

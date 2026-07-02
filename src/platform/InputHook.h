@@ -20,7 +20,7 @@ public:
     void stop();                      // uninstall
 
 signals:
-    void foregroundChanged();         // the OS foreground window changed
+    void dismissRequested();          // user clicked away / switched windows → hide
 };
 
 } // namespace hopy::platform

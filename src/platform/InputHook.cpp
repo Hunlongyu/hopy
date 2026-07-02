@@ -9,10 +9,12 @@
 namespace hopy::platform {
 namespace {
 
-HHOOK         g_kbHook  = nullptr;
-HWINEVENTHOOK g_fgHook  = nullptr;
-QWidget*      g_target  = nullptr;
-InputHook*    g_self    = nullptr;
+HHOOK         g_kbHook    = nullptr;
+HHOOK         g_mouseHook = nullptr;
+HWINEVENTHOOK g_fgHook    = nullptr;
+QWidget*      g_target    = nullptr;
+HWND          g_targetWnd = nullptr;
+InputHook*    g_self      = nullptr;
 bool          g_down[256] = {};
 
 // Special (non-text) keys hopy navigates with. Returns 0 for ordinary character
@@ -92,8 +94,19 @@ LRESULT CALLBACK kbProc(int code, WPARAM wp, LPARAM lp) {
     return 1;   // swallow: the focused editor must not receive it
 }
 
+LRESULT CALLBACK mouseProc(int code, WPARAM wp, LPARAM lp) {
+    if (code == HC_ACTION && g_self && g_targetWnd &&
+        (wp == WM_LBUTTONDOWN || wp == WM_RBUTTONDOWN || wp == WM_MBUTTONDOWN)) {
+        const auto* m = reinterpret_cast<MSLLHOOKSTRUCT*>(lp);
+        RECT r{};
+        if (GetWindowRect(g_targetWnd, &r) && !PtInRect(&r, m->pt))
+            emit g_self->dismissRequested();   // clicked outside hopy → hide (don't swallow)
+    }
+    return CallNextHookEx(nullptr, code, wp, lp);
+}
+
 void CALLBACK fgProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD) {
-    if (g_self) emit g_self->foregroundChanged();
+    if (g_self) emit g_self->dismissRequested();   // switched windows (Alt-Tab etc.)
 }
 
 } // namespace
@@ -102,21 +115,25 @@ InputHook::InputHook(QObject* parent) : QObject(parent) {}
 InputHook::~InputHook() { stop(); }
 
 void InputHook::start(QWidget* keyTarget) {
-    g_target = keyTarget;
-    g_self   = this;
+    g_target    = keyTarget;
+    g_targetWnd = keyTarget ? reinterpret_cast<HWND>(keyTarget->winId()) : nullptr;
+    g_self      = this;
     for (bool& d : g_down) d = false;
-    if (!g_kbHook)
-        g_kbHook = SetWindowsHookExW(WH_KEYBOARD_LL, kbProc, GetModuleHandleW(nullptr), 0);
+    const HMODULE mod = GetModuleHandleW(nullptr);
+    if (!g_kbHook)    g_kbHook    = SetWindowsHookExW(WH_KEYBOARD_LL, kbProc,    mod, 0);
+    if (!g_mouseHook) g_mouseHook = SetWindowsHookExW(WH_MOUSE_LL,    mouseProc, mod, 0);
     if (!g_fgHook)
         g_fgHook = SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND,
                                    nullptr, fgProc, 0, 0, WINEVENT_OUTOFCONTEXT);
 }
 
 void InputHook::stop() {
-    if (g_kbHook) { UnhookWindowsHookEx(g_kbHook); g_kbHook = nullptr; }
-    if (g_fgHook) { UnhookWinEvent(g_fgHook);       g_fgHook = nullptr; }
-    g_target = nullptr;
-    g_self   = nullptr;
+    if (g_kbHook)    { UnhookWindowsHookEx(g_kbHook);    g_kbHook    = nullptr; }
+    if (g_mouseHook) { UnhookWindowsHookEx(g_mouseHook); g_mouseHook = nullptr; }
+    if (g_fgHook)    { UnhookWinEvent(g_fgHook);         g_fgHook    = nullptr; }
+    g_target    = nullptr;
+    g_targetWnd = nullptr;
+    g_self      = nullptr;
 }
 
 } // namespace hopy::platform

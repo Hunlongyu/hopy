@@ -181,6 +181,24 @@ void setNoActivate(quintptr windowHandle) {
     const LONG_PTR ex = GetWindowLongPtrW(h, GWL_EXSTYLE);
     SetWindowLongPtrW(h, GWL_EXSTYLE, ex | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW);
 }
+
+QList<MonitorInfo> physicalMonitors() {
+    QList<MonitorInfo> list;
+    EnumDisplayMonitors(nullptr, nullptr,
+        [](HMONITOR h, HDC, LPRECT, LPARAM p) -> BOOL {
+            auto* out = reinterpret_cast<QList<MonitorInfo>*>(p);
+            MONITORINFOEXW mi{};
+            mi.cbSize = sizeof(mi);
+            if (GetMonitorInfoW(h, &mi)) {
+                const RECT& r = mi.rcMonitor;
+                out->append({ QRect(r.left, r.top, r.right - r.left, r.bottom - r.top),
+                              QString::fromWCharArray(mi.szDevice) });
+            }
+            return TRUE;
+        },
+        reinterpret_cast<LPARAM>(&list));
+    return list;
+}
 } // namespace hopy::platform
 
 #elif defined(Q_OS_MAC)
@@ -191,6 +209,7 @@ void restoreForegroundWindow(WindowHandle) {}
 bool isForegroundWindow(WindowHandle) { return true; }
 bool isOwnWindow(WindowHandle) { return false; }
 void setNoActivate(quintptr) {}
+QList<MonitorInfo> physicalMonitors() { return {}; }
 void sendPasteShortcut(bool plainText) {
     CGEventSourceRef src = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
     const CGKeyCode kV = 9;
@@ -232,6 +251,7 @@ void restoreForegroundWindow(WindowHandle h) {
 bool isForegroundWindow(WindowHandle) { return true; }
 bool isOwnWindow(WindowHandle) { return false; }
 void setNoActivate(quintptr) {}
+QList<MonitorInfo> physicalMonitors() { return {}; }
 void sendPasteShortcut(bool plainText) {
     Display* d = XOpenDisplay(nullptr);
     if (!d) return;

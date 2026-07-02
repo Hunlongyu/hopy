@@ -2,7 +2,17 @@
 #include <QtGlobal>
 #include <QRect>
 #include <QString>
+#include <QList>
 namespace hopy::platform {
+
+// A monitor's rectangle in NATIVE / physical screen pixels, plus its GDI device
+// name — used to convert a physical caret position to Qt logical coordinates.
+struct MonitorInfo {
+    QRect rect;
+    QString device;
+};
+QList<MonitorInfo> physicalMonitors();
+
 using WindowHandle = quintptr;
 WindowHandle captureForegroundWindow();
 void restoreForegroundWindow(WindowHandle h);
