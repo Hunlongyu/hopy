@@ -1,4 +1,5 @@
 #include "ui/PreviewPopup.h"
+#include "util/I18n.h"
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QScrollArea>
@@ -87,7 +88,7 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
                 ch = shown.height();
             } else {
                 content_->setPixmap(QPixmap());
-                content_->setText(QStringLiteral("（图片缺失）"));
+                content_->setText(T("(image missing)"));
                 ch = textHeight(content_->text());
             }
             break;

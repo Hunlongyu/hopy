@@ -11,6 +11,7 @@
 #include "platform/Autostart.h"
 #include "util/Paths.h"
 #include "util/Hash.h"
+#include "util/I18n.h"
 #include <QApplication>
 #include <QFile>
 #include <QImage>
@@ -77,8 +78,8 @@ void Application::start() {
             if (!hotkey_->setShortcut(s.hotkey)) {
                 // Combo is taken by another program — keep the working one and
                 // roll the field back so what the user sees matches reality.
-                QMessageBox::warning(window_, QStringLiteral("快捷键"),
-                    QStringLiteral("快捷键 %1 注册失败，可能已被其他程序占用，请换一个。")
+                QMessageBox::warning(window_, T("Hotkey"),
+                    T("Could not register the shortcut %1 — it may already be in use by another program. Please pick another.")
                         .arg(QKeySequence(s.hotkey).toString(QKeySequence::NativeText)));
                 s.hotkey = settings_.hotkey;
                 window_->setSettings(s);   // reflect the revert in the panel

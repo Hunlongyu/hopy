@@ -1,5 +1,6 @@
 #include "ui/panel/HelpPanel.h"
 #include "util/Icons.h"
+#include "util/I18n.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
@@ -22,25 +23,25 @@ HelpPanel::HelpPanel(QWidget* parent) : QWidget(parent) {
     back->setCursor(Qt::PointingHandCursor);
     back->setFocusPolicy(Qt::NoFocus);
     connect(back, &QToolButton::clicked, this, &HelpPanel::backRequested);
-    auto* title = new QLabel(QStringLiteral("快捷键说明"));
+    auto* title = new QLabel(T("Shortcuts"));
     title->setObjectName("PanelTitle");
     head->addWidget(back, 0, 0, Qt::AlignLeft);
     head->addWidget(title, 0, 0, Qt::AlignCenter);
     root->addLayout(head);
 
-    struct Row { const char* key; const char* desc; };
+    struct Row { const char* key; const char* desc; };  // desc is an English key for T()
     const Row rows[] = {
-        {"/", "聚焦搜索框"},
-        {"↑ / ↓", "选择上一项 / 下一项"},
-        {"← / → / Tab", "切换内容类型（循环）"},
-        {"1 – 5", "快速选中第 N 项"},
-        {"Enter", "确认选中项"},
-        {"Shift+Enter", "以纯文本确认选中项"},
-        {"F", "切换收藏"},
-        {"T", "切换置顶"},
-        {"Delete / D", "删除选中项"},
-        {"Esc", "隐藏窗口"},
-        {"M4 / M5", "预览翻页（鼠标侧键 M4 下翻 / M5 上翻）"},
+        {"/", "Focus the search box"},
+        {"↑ / ↓", "Select previous / next"},
+        {"← / → / Tab", "Cycle content type"},
+        {"1 – 5", "Pick item N"},
+        {"Enter", "Confirm selection"},
+        {"Shift+Enter", "Confirm as plain text"},
+        {"F", "Toggle favorite"},
+        {"T", "Toggle pin"},
+        {"Delete / D", "Delete selection"},
+        {"Esc", "Hide window"},
+        {"M4 / M5", "Preview paging (mouse M4 down / M5 up)"},
     };
 
     auto* grid = new QGridLayout();
@@ -53,7 +54,7 @@ HelpPanel::HelpPanel(QWidget* parent) : QWidget(parent) {
         k->setAlignment(Qt::AlignCenter);
         k->setFixedHeight(28);
         grid->addWidget(k, r, 0);
-        auto* d = new QLabel(QString::fromUtf8(row.desc));
+        auto* d = new QLabel(T(row.desc));
         grid->addWidget(d, r, 1, Qt::AlignVCenter);
         ++r;
     }

@@ -10,6 +10,7 @@
 #include "platform/ForegroundWindow.h"
 #include "platform/InputHook.h"
 #include "util/Strings.h"
+#include "util/I18n.h"
 #include "util/Icons.h"
 #include <QApplication>
 #include <QIcon>
@@ -180,8 +181,8 @@ QWidget* MainWindow::buildHeader() {
     h->addWidget(title);
     h->addStretch(1);
     // Update-check and About moved into the Settings panel; header keeps help + settings.
-    auto* hlp = iconButton(QStringLiteral("help"),     QStringLiteral("快捷键说明"));
-    auto* set = iconButton(QStringLiteral("settings"), QStringLiteral("设置"));
+    auto* hlp = iconButton(QStringLiteral("help"),     T("Shortcuts"));
+    auto* set = iconButton(QStringLiteral("settings"), T("Settings"));
     connect(hlp, &QToolButton::clicked, this, &MainWindow::showHelp);
     connect(set, &QToolButton::clicked, this, &MainWindow::showSettings);
     for (auto* b : {hlp, set}) h->addWidget(b);
@@ -215,8 +216,8 @@ QWidget* MainWindow::buildSearchFilterRow() {
     searchIcon_->setPixmap(icons::svgPixmap(QStringLiteral("search"), palette().color(QPalette::Mid), 16));
     searchIcon_->setAttribute(Qt::WA_TransparentForMouseEvents);
     auto* mag = searchIcon_;
-    auto* aa = inSearchToggle(QStringLiteral("Aa"), QStringLiteral("区分大小写"));
-    auto* ww = inSearchToggle(QStringLiteral("W"), QStringLiteral("全词匹配"));
+    auto* aa = inSearchToggle(QStringLiteral("Aa"), T("Case sensitive"));
+    auto* ww = inSearchToggle(QStringLiteral("W"), T("Whole word"));
     auto* sl = new QHBoxLayout(search_);
     sl->setContentsMargins(14, 0, 8, 0);      // magnifier sits a little in from the left edge
     sl->setSpacing(2);
@@ -234,9 +235,9 @@ QWidget* MainWindow::buildSearchFilterRow() {
     auto* fg = new QHBoxLayout(filterGroup);
     fg->setContentsMargins(3, 2, 3, 2);
     fg->setSpacing(2);
-    btnText_  = iconButton(QStringLiteral("filter-text"),  QStringLiteral("文本"), true);
-    btnImage_ = iconButton(QStringLiteral("filter-image"), QStringLiteral("图片"), true);
-    btnFiles_ = iconButton(QStringLiteral("filter-files"), QStringLiteral("文件"), true);
+    btnText_  = iconButton(QStringLiteral("filter-text"),  T("Text"), true);
+    btnImage_ = iconButton(QStringLiteral("filter-image"), T("Image"), true);
+    btnFiles_ = iconButton(QStringLiteral("filter-files"), T("Files"), true);
     fg->addWidget(btnText_);
     fg->addWidget(btnImage_);
     fg->addWidget(btnFiles_);
@@ -247,7 +248,7 @@ QWidget* MainWindow::buildSearchFilterRow() {
     favFrame->setObjectName("FilterGroup");
     auto* ff = new QHBoxLayout(favFrame);
     ff->setContentsMargins(3, 2, 3, 2);
-    btnFav_ = iconButton(QStringLiteral("filter-star"), QStringLiteral("仅收藏"), true);
+    btnFav_ = iconButton(QStringLiteral("filter-star"), T("Favorites only"), true);
     ff->addWidget(btnFav_);
     h->addWidget(favFrame);
 

@@ -2,6 +2,7 @@
 #include "ui/IconButton.h"
 #include "ui/HotkeyEdit.h"
 #include "util/Icons.h"
+#include "util/I18n.h"
 #include <QDesktopServices>
 #include <QUrl>
 #include <QMessageBox>
@@ -67,7 +68,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     back->setCursor(Qt::PointingHandCursor);
     back->setFocusPolicy(Qt::NoFocus);
     connect(back, &QToolButton::clicked, this, &SettingsPanel::backRequested);
-    auto* title = new QLabel(QStringLiteral("设置"));
+    auto* title = new QLabel(T("Settings"));
     title->setObjectName("PanelTitle");
     head->addWidget(back, 0, 0, Qt::AlignLeft);
     head->addWidget(title, 0, 0, Qt::AlignCenter);
@@ -84,16 +85,16 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
 
     // Controls
     theme_ = new QComboBox();
-    theme_->addItem(QStringLiteral("深色"), "dark");
-    theme_->addItem(QStringLiteral("浅色"), "light");
+    theme_->addItem(T("Dark"), "dark");
+    theme_->addItem(T("Light"), "light");
     theme_->setFixedWidth(120);
     placement_ = new QComboBox();
-    placement_->addItem(QStringLiteral("跟随光标"), "cursor");
-    placement_->addItem(QStringLiteral("屏幕中央"), "center");
+    placement_->addItem(T("Follow caret"), "cursor");
+    placement_->addItem(T("Screen center"), "center");
     placement_->setFixedWidth(120);
     previewSide_ = new QComboBox();
-    previewSide_->addItem(QStringLiteral("左侧"), "left");
-    previewSide_->addItem(QStringLiteral("右侧"), "right");
+    previewSide_->addItem(T("Left"), "left");
+    previewSide_->addItem(T("Right"), "right");
     previewSide_->setFixedWidth(120);
     opacity_ = new QSlider(Qt::Horizontal);
     opacity_->setRange(60, 100);   // min 60% so the window never becomes too transparent to fix
@@ -107,53 +108,56 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     maxHistory_ = new QSpinBox(); maxHistory_->setRange(10, 1000); maxHistory_->setFixedWidth(110);
     maxStorage_ = new QSpinBox(); maxStorage_->setRange(10, 1000); maxStorage_->setFixedWidth(110);
 
-    QVBoxLayout* ap; auto* apCard = makeCard(QStringLiteral("外观"), ap);
-    addRow(ap, QStringLiteral("主题"), theme_, true);
-    addRow(ap, QStringLiteral("显示位置"), placement_, true);
-    addRow(ap, QStringLiteral("预览位置"), previewSide_, true);
-    addRow(ap, QStringLiteral("不透明度"), opacity_, false);
+    QVBoxLayout* ap; auto* apCard = makeCard(T("Appearance"), ap);
+    addRow(ap, T("Theme"), theme_, true);
+    addRow(ap, T("Window position"), placement_, true);
+    addRow(ap, T("Preview side"), previewSide_, true);
+    addRow(ap, T("Opacity"), opacity_, false);
     col->addWidget(apCard);
 
-    QVBoxLayout* bh; auto* bhCard = makeCard(QStringLiteral("行为"), bh);
-    addRow(bh, QStringLiteral("激活快捷键"), hotkey_, true);
-    addRow(bh, QStringLiteral("确认后立即粘贴"), pasteImmediate_, true);
-    addRow(bh, QStringLiteral("悬停预览"), hover_, true);
-    addRow(bh, QStringLiteral("空格预览"), space_, true);
-    addRow(bh, QStringLiteral("开机自启"), autostart_, false);
+    QVBoxLayout* bh; auto* bhCard = makeCard(T("Behavior"), bh);
+    addRow(bh, T("Activation hotkey"), hotkey_, true);
+    addRow(bh, T("Paste immediately on confirm"), pasteImmediate_, true);
+    addRow(bh, T("Hover preview"), hover_, true);
+    addRow(bh, T("Space preview"), space_, true);
+    addRow(bh, T("Start on boot"), autostart_, false);
     col->addWidget(bhCard);
 
-    QVBoxLayout* st; auto* stCard = makeCard(QStringLiteral("存储"), st);
-    addRow(st, QStringLiteral("显示条数"), maxHistory_, true);
-    addRow(st, QStringLiteral("存储上限"), maxStorage_, true);
-    auto* clearBtn = new QPushButton(QStringLiteral("清空全部"));
+    QVBoxLayout* st; auto* stCard = makeCard(T("Storage"), st);
+    addRow(st, T("Items shown"), maxHistory_, true);
+    addRow(st, T("Storage limit"), maxStorage_, true);
+    auto* clearBtn = new QPushButton(T("Clear all"));
     clearBtn->setCursor(Qt::PointingHandCursor);
     clearBtn->setStyleSheet(QStringLiteral(
         "QPushButton{background:#c0392b;color:#fff;border:none;}"
         "QPushButton:hover{background:#a93226;}"));
     connect(clearBtn, &QPushButton::clicked, this, [this] {
-        if (QMessageBox::question(this, QStringLiteral("清空历史"),
-                QStringLiteral("确定清空全部剪贴板记录吗？此操作不可撤销。"),
-                QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
-            emit clearAllRequested();
+        QMessageBox box(QMessageBox::Question, T("Clear history"),
+                        T("Clear all clipboard records? This cannot be undone."),
+                        QMessageBox::NoButton, this);
+        auto* yes = box.addButton(T("Yes"), QMessageBox::YesRole);
+        box.addButton(T("No"), QMessageBox::NoRole);
+        box.exec();
+        if (box.clickedButton() == yes) emit clearAllRequested();
     });
-    addRow(st, QStringLiteral("清空历史"), clearBtn, false);
+    addRow(st, T("Clear history"), clearBtn, false);
     col->addWidget(stCard);
 
-    QVBoxLayout* ab; auto* abCard = makeCard(QStringLiteral("关于"), ab);
-    auto* nameVer = new QLabel(QStringLiteral("Hopy　·　版本 0.1.0"));
+    QVBoxLayout* ab; auto* abCard = makeCard(T("About"), ab);
+    auto* nameVer = new QLabel(QStringLiteral("Hopy · ") + T("Version 0.1.0"));
     nameVer->setStyleSheet(QStringLiteral("font-weight:600;"));
     ab->addWidget(nameVer);
     ab->addSpacing(4);
-    auto* desc = new QLabel(QStringLiteral("使用 Qt 6 与 SQLite 构建的轻量剪贴板管理器。"));
+    auto* desc = new QLabel(T("A lightweight clipboard manager built with Qt 6 and SQLite."));
     desc->setWordWrap(true);
     ab->addWidget(desc);
     ab->addSpacing(2);
-    ab->addWidget(new QLabel(QStringLiteral("MIT 开源协议")));
+    ab->addWidget(new QLabel(T("MIT License")));
     ab->addSpacing(8);
     auto* aboutRow = new QWidget();
     auto* arl = new QHBoxLayout(aboutRow);
     arl->setContentsMargins(0, 0, 0, 0);
-    auto* checkBtn = new QPushButton(QStringLiteral("检查更新"));
+    auto* checkBtn = new QPushButton(T("Check for updates"));
     checkBtn->setCursor(Qt::PointingHandCursor);
     connect(checkBtn, &QPushButton::clicked, this, &SettingsPanel::checkUpdateRequested);
     auto* gh = new IconButton(QStringLiteral("github"), QStringLiteral("GitHub"), false);

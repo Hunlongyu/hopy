@@ -1,5 +1,6 @@
 #include "ui/panel/AboutPanel.h"
 #include "util/Icons.h"
+#include "util/I18n.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -19,7 +20,7 @@ AboutPanel::AboutPanel(QWidget* parent) : QWidget(parent) {
     back->setCursor(Qt::PointingHandCursor);
     back->setFocusPolicy(Qt::NoFocus);
     connect(back, &QToolButton::clicked, this, &AboutPanel::backRequested);
-    auto* title = new QLabel(QStringLiteral("关于"));
+    auto* title = new QLabel(T("About"));
     title->setObjectName("PanelTitle");
     head->addWidget(back);
     head->addSpacing(6);
@@ -39,16 +40,16 @@ AboutPanel::AboutPanel(QWidget* parent) : QWidget(parent) {
     name->setAlignment(Qt::AlignCenter);
     root->addWidget(name);
 
-    auto* ver = new QLabel(QStringLiteral("版本 0.1.0"));
+    auto* ver = new QLabel(T("Version 0.1.0"));
     ver->setAlignment(Qt::AlignCenter);
     root->addWidget(ver);
 
-    auto* desc = new QLabel(QStringLiteral("使用 Qt 6 与 SQLite 构建的轻量剪贴板管理器。"));
+    auto* desc = new QLabel(T("A lightweight clipboard manager built with Qt 6 and SQLite."));
     desc->setAlignment(Qt::AlignCenter);
     desc->setWordWrap(true);
     root->addWidget(desc);
 
-    auto* lic = new QLabel(QStringLiteral("MIT 开源协议"));
+    auto* lic = new QLabel(T("MIT License"));
     lic->setAlignment(Qt::AlignCenter);
     root->addWidget(lic);
     root->addStretch(2);

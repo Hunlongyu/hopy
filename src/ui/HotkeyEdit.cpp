@@ -1,5 +1,6 @@
 #include "ui/HotkeyEdit.h"
 #include "util/Icons.h"
+#include "util/I18n.h"
 #include <QAction>
 #include <QApplication>
 #include <QFocusEvent>
@@ -38,13 +39,13 @@ QString modifierText(Qt::KeyboardModifiers mods) {
 HotkeyEdit::HotkeyEdit(QWidget* parent) : QLineEdit(parent) {
     setReadOnly(true);                       // never accept typed text
     setContextMenuPolicy(Qt::NoContextMenu); // no paste-arbitrary-text menu
-    setPlaceholderText(QStringLiteral("点击后按下快捷键"));
-    setToolTip(QStringLiteral("按下 Ctrl / Alt / Win 加一个键；Backspace 清空，Esc 取消"));
+    setPlaceholderText(T("Click, then press a shortcut"));
+    setToolTip(T("Press Ctrl / Alt / Win plus a key; Backspace clears, Esc cancels"));
     setCursor(Qt::PointingHandCursor);
     // A trailing clear button that works even though the field is read-only
     // (unlike the built-in clear button, an addAction() button stays enabled).
     clearAction_ = addAction(QIcon(), QLineEdit::TrailingPosition);
-    clearAction_->setToolTip(QStringLiteral("清空快捷键"));
+    clearAction_->setToolTip(T("Clear shortcut"));
     connect(clearAction_, &QAction::triggered, this, [this] {
         commit(QKeySequence());
         setFocus();
@@ -96,7 +97,7 @@ void HotkeyEdit::keyPressEvent(QKeyEvent* ev) {
     // Reject bare keys and Shift-only combos — a global hotkey must carry a
     // real modifier or it would swallow ordinary keystrokes.
     if (!hasBase) {
-        setText(QStringLiteral("需要 Ctrl / Alt / Win"));
+        setText(T("Needs Ctrl / Alt / Win"));
         ev->accept();
         return;
     }

@@ -1,4 +1,5 @@
 #include "ui/TrayIcon.h"
+#include "util/I18n.h"
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QIcon>
@@ -9,10 +10,10 @@ TrayIcon::TrayIcon(QObject* parent) : QObject(parent) {
     tray_ = new QSystemTrayIcon(QIcon(QStringLiteral(":/logo.ico")), this);
 
     auto* menu = new QMenu();
-    QAction* showAct = menu->addAction(QStringLiteral("显示 (Show)"));
-    QAction* setAct  = menu->addAction(QStringLiteral("设置 (Settings)"));
+    QAction* showAct = menu->addAction(T("Show"));
+    QAction* setAct  = menu->addAction(T("Settings"));
     menu->addSeparator();
-    QAction* quitAct = menu->addAction(QStringLiteral("退出 (Quit)"));
+    QAction* quitAct = menu->addAction(T("Quit"));
     connect(showAct, &QAction::triggered, this, &TrayIcon::showRequested);
     connect(setAct,  &QAction::triggered, this, &TrayIcon::settingsRequested);
     connect(quitAct, &QAction::triggered, this, &TrayIcon::quitRequested);
