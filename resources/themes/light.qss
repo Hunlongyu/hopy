@@ -1,8 +1,8 @@
 /* Ropy Light palette: bg #ffffff, cards #f5f5f5, input #f0f0f0, border #e0e0e0, accent #5b7bd5 */
 QWidget { color: #1a1a1a; }
 #Root { background: #ffffff; border-radius: 12px; }
-QLabel#Title { font-size: 20px; font-weight: bold; color: #101012; }
-QLabel#PanelTitle { font-size: 16px; font-weight: 600; color: #101012; }
+QLabel#Title { font-size: 20px; font-weight: bold; color: #303136; }
+QLabel#PanelTitle { font-size: 16px; font-weight: 600; color: #303136; }
 
 QLineEdit {
     background: #f0f0f0;
