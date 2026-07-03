@@ -22,7 +22,7 @@ TrayIcon::TrayIcon(QObject* parent) : QObject(parent) {
     });
 
     tray_->setContextMenu(menu);
-    tray_->setToolTip(QStringLiteral("hopy"));
+    tray_->setToolTip(QStringLiteral("Hopy"));
     tray_->show();
 }
 

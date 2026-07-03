@@ -175,7 +175,7 @@ QWidget* MainWindow::buildHeader() {
     auto* w = new QWidget(this);
     auto* h = new QHBoxLayout(w);
     h->setContentsMargins(0, 0, 0, 0);
-    auto* title = new QLabel(QStringLiteral("hopy"), w);
+    auto* title = new QLabel(QStringLiteral("Hopy"), w);
     title->setObjectName("Title");
     h->addWidget(title);
     h->addStretch(1);

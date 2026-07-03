@@ -140,7 +140,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     col->addWidget(stCard);
 
     QVBoxLayout* ab; auto* abCard = makeCard(QStringLiteral("关于"), ab);
-    auto* nameVer = new QLabel(QStringLiteral("hopy　·　版本 0.1.0"));
+    auto* nameVer = new QLabel(QStringLiteral("Hopy　·　版本 0.1.0"));
     nameVer->setStyleSheet(QStringLiteral("font-weight:600;"));
     ab->addWidget(nameVer);
     ab->addSpacing(4);

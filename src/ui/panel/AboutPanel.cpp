@@ -34,7 +34,7 @@ AboutPanel::AboutPanel(QWidget* parent) : QWidget(parent) {
     logo->setAlignment(Qt::AlignCenter);
     root->addWidget(logo);
 
-    auto* name = new QLabel(QStringLiteral("hopy"));
+    auto* name = new QLabel(QStringLiteral("Hopy"));
     name->setObjectName("Title");
     name->setAlignment(Qt::AlignCenter);
     root->addWidget(name);
