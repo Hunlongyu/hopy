@@ -7,6 +7,7 @@
 #include "ui/Theme.h"
 #include "ui/TrayIcon.h"
 #include "hotkey/GlobalHotkey.h"
+#include "platform/ForegroundWindow.h"
 #include "platform/Autostart.h"
 #include "util/Paths.h"
 #include "util/Hash.h"
@@ -28,6 +29,7 @@ Application::~Application() = default;
 void Application::start() {
     settings_ = Settings::load();
     applyTheme(settings_.theme);
+    platform::enableUiaAccessibility();   // pose as AT client so CEF editors expose their caret
 
     paths::ensureDir(paths::dataDir());   // SQLite can't create the db file if the dir is missing
     Database db = Database::openAt(paths::dataDir() + "/clipboard.sqlite");

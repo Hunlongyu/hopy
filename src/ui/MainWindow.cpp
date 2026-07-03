@@ -51,14 +51,18 @@ QToolButton* iconButton(const QString& svgName, const QString& tip, bool checkab
 bool caretAnchorLogical(QPoint& out) {
     platform::CaretInfo ci;
     if (!platform::queryCaret(ci)) return false;
-    // Anchor at the caret's bottom-left so the panel drops just below the line.
+    // Anchor at the caret's bottom-left so the panel drops just below the line,
+    // but locate the monitor by the caret CENTRE — the bottom edge of a caret on
+    // the screen's last row can fall just outside the monitor rect.
     const QPoint physAnchor(ci.caret.left(), ci.caret.bottom());
+    const QPoint physCentre((ci.caret.left() + ci.caret.right()) / 2,
+                            (ci.caret.top() + ci.caret.bottom()) / 2);
 
     // Which PHYSICAL monitor holds the caret (Win32 pixels)?
     const QList<platform::MonitorInfo> monitors = platform::physicalMonitors();
     int mi = -1;
     for (int i = 0; i < monitors.size(); ++i)
-        if (monitors[i].rect.contains(physAnchor)) { mi = i; break; }
+        if (monitors[i].rect.contains(physCentre)) { mi = i; break; }
     if (mi < 0) return false;
     const QRect physMon = monitors[mi].rect;
 
