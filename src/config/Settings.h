@@ -8,7 +8,7 @@ enum class ConfirmMode { CopyOnly, PasteImmediately };
 
 struct AppSettings {
     QString theme = "dark";      // "dark" | "light"
-    QString hotkey = "Ctrl+Shift+V";
+    QString hotkey = "Alt+C";
     int maxHistory = 100;
     int maxStorage = 200;
     ConfirmMode confirmMode = ConfirmMode::PasteImmediately;
