@@ -13,6 +13,7 @@ QLineEdit {
     selection-background-color: #5b7bd5;
 }
 QLineEdit#SearchBox { border-radius: 18px; padding: 8px 14px; }
+QLineEdit#SearchBox[searching="true"] { border: 2px solid #5b7bd5; }   /* search mode indicator */
 QToolButton[inSearch="true"] { color: #6b6b6b; background: transparent; border: none; padding: 2px 5px; font-size: 13px; }
 QToolButton[inSearch="true"]:hover { color: #1a1a1a; background: transparent; }
 QToolButton[inSearch="true"]:checked { color: #5b7bd5; background: transparent; }

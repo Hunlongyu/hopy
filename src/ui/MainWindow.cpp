@@ -36,6 +36,7 @@
 #include <QSpinBox>
 #include <QKeySequenceEdit>
 #include <QAbstractItemView>
+#include <QStyle>
 
 namespace hopy {
 
@@ -313,7 +314,7 @@ void MainWindow::showAtCursor() {
     if (!(followCursor_ && caretAnchorLogical(anchor))) anchor = QCursor::pos();
     setGeometry(placeWindow(anchor, geoms, size(), mode));
     search_->clear();
-    searchMode_ = false;
+    setSearchMode(false);
     updateFilterButtons();               // keep the last-used category (do not reset)
     applyFilter();
     showTimer_.restart();
@@ -346,6 +347,20 @@ void MainWindow::confirmByIndex(int index) {
     if (r) emit confirmRequested(r->id, false);
 }
 
+void MainWindow::setSearchMode(bool on) {
+    if (searchMode_ == on) return;
+    searchMode_ = on;
+    // The box never holds OS focus (the window doesn't activate), so there is no
+    // blinking caret to signal search mode — cue it with an accent border (QSS
+    // [searching="true"]) + a tinted magnifier.
+    search_->setProperty("searching", on);
+    search_->style()->unpolish(search_);
+    search_->style()->polish(search_);
+    search_->update();
+    searchIcon_->setPixmap(icons::svgPixmap(QStringLiteral("search"),
+        palette().color(on ? QPalette::Highlight : QPalette::Mid), 16));
+}
+
 bool MainWindow::handleNavKey(QKeyEvent* ev) {
     const int key = ev->key();
     const bool shift = ev->modifiers() & Qt::ShiftModifier;
@@ -360,9 +375,13 @@ bool MainWindow::handleNavKey(QKeyEvent* ev) {
         case Qt::Key_Return:
         case Qt::Key_Enter:   confirmCurrent(shift); return true;
         case Qt::Key_Slash:
-            if (!searchMode_) { searchMode_ = true; return true; }  // "/" enters search
-            return false;                                          // in search: let "/" type
-        case Qt::Key_Escape:  emit hideRequested(); return true;
+            if (!searchMode_) { setSearchMode(true); return true; }  // "/" enters search
+            return false;                                           // in search: let "/" type
+        case Qt::Key_Escape:
+            // First Esc leaves search (clearing the query) and returns to command
+            // mode; a second Esc (already in command mode) hides the window.
+            if (searchMode_) { setSearchMode(false); search_->clear(); return true; }
+            emit hideRequested(); return true;
         case Qt::Key_Delete:  { const qint64 id = currentId(); if (id) emit deleteRequested(id); return true; }
         default: break;
     }
@@ -405,7 +424,11 @@ void MainWindow::keyPressEvent(QKeyEvent* ev) {
     if (handleNavKey(ev)) return;
     // Unhandled key while searching → edit the query (the box has no OS focus).
     if (searchMode_) {
-        if (ev->key() == Qt::Key_Backspace) { search_->backspace(); return; }
+        if (ev->key() == Qt::Key_Backspace) {
+            search_->backspace();
+            if (search_->text().isEmpty()) setSearchMode(false);   // cleared → command mode
+            return;
+        }
         const QString t = ev->text();
         if (!t.isEmpty() && t[0].isPrint()) { search_->insert(t); return; }
     }

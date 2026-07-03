@@ -68,6 +68,7 @@ private:
     void confirmByIndex(int index);
     qint64 currentId() const;
     bool handleNavKey(QKeyEvent* ev);
+    void setSearchMode(bool on);   // toggle search mode + its accent-border indicator
 
     QStackedWidget* stack_ = nullptr;
     SettingsPanel* settingsPanel_ = nullptr;
