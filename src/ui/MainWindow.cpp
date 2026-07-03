@@ -139,6 +139,14 @@ QWidget* MainWindow::buildListPage() {
 
     search_->installEventFilter(this);
     list_->installEventFilter(this);
+    // Double-click a card → confirm that card, identical to pressing Enter
+    // (Shift held = paste as plain text, mirroring Shift+Enter).
+    connect(list_, &QListView::doubleClicked, this, [this](const QModelIndex& index) {
+        const ClipboardRecord* r = model_->recordAt(index.row());
+        if (!r) return;
+        const bool plainText = QGuiApplication::keyboardModifiers() & Qt::ShiftModifier;
+        emit confirmRequested(r->id, plainText);
+    });
     connect(search_, &QLineEdit::textChanged, this, [this] { applyFilter(); });
     return page;
 }
