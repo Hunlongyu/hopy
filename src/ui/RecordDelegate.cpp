@@ -166,7 +166,7 @@ void RecordDelegate::paint(QPainter* p, const QStyleOptionViewItem& opt, const Q
         const int pathLineH = QFontMetrics(pf).lineSpacing();
         const QRect pathRect(inner.left(), nameRect.bottom() + 2, rightLimit - inner.left(), pathLineH * 2);
         QTextOption pto(Qt::AlignLeft | Qt::AlignTop);
-        pto.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+        pto.setWrapMode(QTextOption::WrapAnywhere);   // fill lines; don't orphan "E:" of a path
         p->save(); p->setClipRect(pathRect);
         p->drawText(pathRect, firstPath, pto);
         p->restore();
@@ -196,7 +196,10 @@ void RecordDelegate::paint(QPainter* p, const QStyleOptionViewItem& opt, const Q
 
     p->setPen(textColor);
     QTextOption to(Qt::AlignLeft | Qt::AlignTop);
-    to.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+    // Fill each line before wrapping. WrapAtWordBoundaryOrAnywhere treats ':' as a
+    // break point, so a path like "E:\..." wraps right after "E:" — WrapAnywhere
+    // avoids that orphan and keeps long no-space strings (paths, URLs) tidy.
+    to.setWrapMode(QTextOption::WrapAnywhere);
     p->save(); p->setClipRect(contentRect);
     p->drawText(contentRect, idx.data(Qt::DisplayRole).toString(), to);
     p->restore();
