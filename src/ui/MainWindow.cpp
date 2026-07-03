@@ -60,6 +60,11 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
 
     inputHook_ = new platform::InputHook(this);
     connect(inputHook_, &platform::InputHook::dismissRequested, this, [this] {
+        // A combobox/menu popup or a modal dialog we own is a separate top-level
+        // window; interacting with it must NOT dismiss us (otherwise the settings
+        // dropdowns close hopy the instant they open).
+        if (QApplication::activePopupWidget() || QApplication::activeModalWidget())
+            return;
         // Clicked away / switched windows → dismiss. Ignore the burst that can
         // fire right as we appear.
         if (isVisible() && (!showTimer_.isValid() || showTimer_.elapsed() > 200))

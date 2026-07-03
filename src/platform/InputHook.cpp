@@ -17,6 +17,16 @@ HWND          g_targetWnd = nullptr;
 InputHook*    g_self      = nullptr;
 bool          g_down[256] = {};
 
+// True when h belongs to this process — our own combobox/menu popups and modal
+// dialogs are separate top-level windows. A foreground switch to one of them, or
+// a click landing on one, must NOT dismiss hopy.
+bool isOwnWindow(HWND h) {
+    if (!h) return false;
+    DWORD pid = 0;
+    GetWindowThreadProcessId(h, &pid);
+    return pid == GetCurrentProcessId();
+}
+
 // Special (non-text) keys hopy navigates with. Returns 0 for ordinary character
 // keys, which are resolved to their unicode text instead.
 int vkToQt(DWORD vk, bool shift) {
@@ -99,14 +109,16 @@ LRESULT CALLBACK mouseProc(int code, WPARAM wp, LPARAM lp) {
         (wp == WM_LBUTTONDOWN || wp == WM_RBUTTONDOWN || wp == WM_MBUTTONDOWN)) {
         const auto* m = reinterpret_cast<MSLLHOOKSTRUCT*>(lp);
         RECT r{};
-        if (GetWindowRect(g_targetWnd, &r) && !PtInRect(&r, m->pt))
+        if (GetWindowRect(g_targetWnd, &r) && !PtInRect(&r, m->pt) &&
+            !isOwnWindow(WindowFromPoint(m->pt)))   // a click on our own popup must not dismiss
             emit g_self->dismissRequested();   // clicked outside hopy → hide (don't swallow)
     }
     return CallNextHookEx(nullptr, code, wp, lp);
 }
 
-void CALLBACK fgProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD) {
-    if (g_self) emit g_self->dismissRequested();   // switched windows (Alt-Tab etc.)
+void CALLBACK fgProc(HWINEVENTHOOK, DWORD, HWND hwnd, LONG, LONG, DWORD, DWORD) {
+    // Ignore our own popups/dialogs coming to the front (combobox dropdowns etc.).
+    if (g_self && !isOwnWindow(hwnd)) emit g_self->dismissRequested();   // switched windows (Alt-Tab etc.)
 }
 
 } // namespace
