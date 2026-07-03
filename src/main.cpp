@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QIcon>
 #include <QLocalSocket>
 #include "app/Application.h"
 
@@ -6,6 +7,7 @@ int main(int argc, char** argv) {
     QApplication app(argc, argv);
     app.setApplicationName("hopy");
     app.setOrganizationName("hopy");
+    app.setWindowIcon(QIcon(QStringLiteral(":/logo.ico")));
     app.setQuitOnLastWindowClosed(false); // stay resident in the tray when the window hides
 
     // Single instance: if one is already running, ask it to show and exit.

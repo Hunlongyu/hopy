@@ -1,5 +1,4 @@
 #include "ui/TrayIcon.h"
-#include "util/Icons.h"
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QIcon>
@@ -7,8 +6,7 @@
 namespace hopy {
 
 TrayIcon::TrayIcon(QObject* parent) : QObject(parent) {
-    QIcon icon = icons::glyphIcon(0xE8C8 /* Copy */, QColor(0xf0, 0xf0, 0xf0), 32);
-    tray_ = new QSystemTrayIcon(icon, this);
+    tray_ = new QSystemTrayIcon(QIcon(QStringLiteral(":/logo.ico")), this);
 
     auto* menu = new QMenu();
     QAction* showAct = menu->addAction(QStringLiteral("显示 (Show)"));

@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
+    <file>logo.ico</file>
     <file>themes/dark.qss</file>
     <file>themes/light.qss</file>
     <file>icons/search.svg</file>

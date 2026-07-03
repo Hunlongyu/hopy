@@ -56,7 +56,11 @@ elseif(UNIX)
   target_include_directories(hopy_lib PUBLIC ${X11_INCLUDE_DIR})
 endif()
 
-qt_add_executable(hopy WIN32 src/main.cpp resources/hopy.qrc)  # WIN32: GUI subsystem, no console
+set(HOPY_APP_SOURCES src/main.cpp resources/hopy.qrc)
+if(WIN32)
+  list(APPEND HOPY_APP_SOURCES resources/hopy.rc)   # embeds logo.ico as the exe icon
+endif()
+qt_add_executable(hopy WIN32 ${HOPY_APP_SOURCES})   # WIN32: GUI subsystem, no console
 target_link_libraries(hopy PRIVATE hopy_lib)
 
 # Static Qt: link platform/SQLite/image plugins in, else the single file can't find qwindows/qsqlite
