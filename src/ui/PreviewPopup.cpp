@@ -6,6 +6,7 @@
 #include <QPixmap>
 #include <QScreen>
 #include <QGuiApplication>
+#include <QFont>
 #include <QFontMetrics>
 
 namespace hopy {
@@ -33,6 +34,9 @@ PreviewPopup::PreviewPopup(QWidget* parent) : QWidget(parent) {
     content_->setWordWrap(true);
     content_->setTextInteractionFlags(Qt::NoTextInteraction);
     content_->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    QFont cf = content_->font();
+    cf.setPixelSize(15);   // one px larger than the list card's 14px content text
+    content_->setFont(cf);
     scroll_->setWidget(content_);
     lay->addWidget(scroll_);
 }
