@@ -1,5 +1,6 @@
 #include "clipboard/PasteService.h"
 #include "clipboard/ClipboardWriter.h"
+#include "platform/ForegroundWindow.h"
 #include <QTimer>
 
 namespace hopy {

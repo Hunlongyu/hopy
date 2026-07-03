@@ -7,7 +7,7 @@
 #include "ui/Theme.h"
 #include "ui/TrayIcon.h"
 #include "hotkey/GlobalHotkey.h"
-#include "platform/ForegroundWindow.h"
+#include "platform/CaretProbe.h"
 #include "platform/Autostart.h"
 #include "util/Paths.h"
 #include "util/Hash.h"

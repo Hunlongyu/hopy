@@ -3,7 +3,6 @@
 #include <functional>
 #include "storage/Record.h"
 #include "config/Settings.h"
-#include "platform/ForegroundWindow.h"
 
 namespace hopy {
 
