@@ -1,0 +1,81 @@
+name: build-windows
+
+# Static single-file Windows build, matching the local toolchain:
+# MSVC 2026 (x64) + the prebuilt static Qt 6.11.1 from yuanpeirong/buildQt.
+# VS 2026 is available on GitHub-hosted runners via the windows-2025-vs2026 image.
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore: [ '**.md', 'docs/**', 'LICENSE' ]
+  workflow_dispatch:
+
+concurrency:
+  group: build-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-static:
+    runs-on: windows-2025-vs2026
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      QT_TAG: Qt6.11.1_rev0
+      QT_ASSET: Qt_6.11.1-static-Release_msvc2026_64_RP.7z
+      QT_DIR: C:\Qt-static
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The prebuilt static Qt is ~200 MB; cache it across runs.
+      - name: Cache static Qt
+        id: qt-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.QT_DIR }}
+          key: qt-static-msvc2026-${{ env.QT_TAG }}-${{ env.QT_ASSET }}
+
+      - name: Download + extract static Qt (MSVC 2026)
+        if: steps.qt-cache.outputs.cache-hit != 'true'
+        run: |
+          $url = "https://github.com/yuanpeirong/buildQt/releases/download/$env:QT_TAG/$env:QT_ASSET"
+          Write-Host "Downloading $url"
+          curl.exe -fL --retry 3 -o qt.7z $url
+          7z x qt.7z -o"$env:QT_DIR" -y | Out-Null
+
+      - name: Locate Qt prefix
+        run: |
+          $cfg = Get-ChildItem -Path $env:QT_DIR -Recurse -Filter Qt6Config.cmake -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $cfg) { throw "Qt6Config.cmake not found under $env:QT_DIR" }
+          # <prefix>/lib/cmake/Qt6/Qt6Config.cmake  ->  prefix is three levels up
+          $prefix = $cfg.Directory.Parent.Parent.Parent.FullName
+          Write-Host "Qt prefix: $prefix"
+          "QT_PREFIX=$prefix" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Set up MSVC (x64)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Install Ninja
+        run: choco install ninja -y --no-progress
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          "-DCMAKE_PREFIX_PATH=$env:QT_PREFIX"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Upload hopy.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: hopy-windows-x64
+          path: build/hopy.exe
+          if-no-files-found: error
