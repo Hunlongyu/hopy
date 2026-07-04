@@ -19,10 +19,13 @@ public:
     void showPreview(const ClipboardRecord& rec, const QRect& anchor, bool leftSide);
     void scrollByPixels(int dy);
     void page(int dir);   // dir = -1 previous page (up), +1 next page (down)
+    void setOpenKeysLabel(const QString& label);   // e.g. "O / 右键", shown in the open hint
 
 private:
     QScrollArea* scroll_ = nullptr;
     QLabel* content_ = nullptr;
+    QLabel* info_ = nullptr;
+    QString openKeysLabel_;
 };
 
 } // namespace hopy

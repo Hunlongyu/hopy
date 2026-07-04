@@ -1,5 +1,7 @@
 #include "ui/PreviewPopup.h"
 #include "util/I18n.h"
+#include "util/TextInfo.h"
+#include "util/OpenTarget.h"
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QScrollArea>
@@ -9,6 +11,8 @@
 #include <QGuiApplication>
 #include <QFont>
 #include <QFontMetrics>
+#include <QDateTime>
+#include <QStringList>
 
 namespace hopy {
 
@@ -39,6 +43,17 @@ PreviewPopup::PreviewPopup(QWidget* parent) : QWidget(parent) {
     cf.setPixelSize(15);   // one px larger than the list card's 14px content text
     content_->setFont(cf);
     scroll_->setWidget(content_);
+
+    info_ = new QLabel(card);
+    info_->setObjectName("PreviewInfo");
+    info_->setWordWrap(false);
+    {
+        QFont f = info_->font();
+        f.setPixelSize(11);
+        info_->setFont(f);
+    }
+    lay->addWidget(info_);   // sits above the scroll area
+
     lay->addWidget(scroll_);
 }
 
@@ -51,6 +66,8 @@ void PreviewPopup::page(int dir) {
     if (auto* vb = scroll_->verticalScrollBar())
         vb->setValue(vb->value() + dir * qMax(1, vb->pageStep() - 16));
 }
+
+void PreviewPopup::setOpenKeysLabel(const QString& label) { openKeysLabel_ = label; }
 
 void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, bool leftSide) {
     QScreen* scr = QGuiApplication::screenAt(anchor.center());
@@ -73,6 +90,34 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
             .boundingRect(QRect(0, 0, cw, 1'000'000), Qt::TextWordWrap, t);
         return br.height() + 4;
     };
+
+    // Top info bar: type · counts · absolute time · open hint.
+    const QString typeLabel =
+        rec.type == ContentType::Image ? T("Image")
+      : rec.type == ContentType::Files ? T("Files")
+                                       : T("Text");
+    const QString absTime =
+        QDateTime::fromMSecsSinceEpoch(rec.createdAt).toString("yyyy-MM-dd HH:mm:ss");
+    QStringList parts{typeLabel};
+    if (rec.type == ContentType::Text || rec.type == ContentType::RichText)
+        parts << T("%1 chars").arg(charCount(rec.content))
+              << T("%1 lines").arg(lineCount(rec.content));
+    parts << absTime;
+
+    QString verb;
+    if (rec.type == ContentType::Files) {
+        verb = T("reveal in file manager");
+    } else if (rec.type == ContentType::Text || rec.type == ContentType::RichText) {
+        switch (detectOpenTarget(rec.content).kind) {
+            case OpenKind::Url:   verb = T("open link"); break;
+            case OpenKind::Email: verb = T("open email"); break;
+            case OpenKind::Path:  verb = T("reveal in file manager"); break;
+            case OpenKind::None:  break;
+        }
+    }
+    if (!verb.isEmpty() && !openKeysLabel_.isEmpty())
+        parts << (openKeysLabel_ + QStringLiteral(" ") + verb);
+    info_->setText(parts.join(QStringLiteral("  ·  ")));
 
     switch (rec.type) {
         case ContentType::Image: {

@@ -21,6 +21,13 @@ const QHash<QByteArray, QString>& zh() {
         {"All",             QStringLiteral("全部")},
         // Preview
         {"(image missing)", QStringLiteral("（图片缺失）")},
+        {"%1 chars",   QStringLiteral("%1 字符")},
+        {"%1 lines",   QStringLiteral("%1 行")},
+        {"open link",  QStringLiteral("打开链接")},
+        {"open email", QStringLiteral("打开邮箱")},
+        {"reveal in file manager", QStringLiteral("在资源管理器中定位")},
+        {"Right-click", QStringLiteral("右键")},
+        {"Middle-click", QStringLiteral("中键")},
         // Relative time
         {"just now",        QStringLiteral("刚刚")},
         {"%1 min ago",      QStringLiteral("%1 分钟前")},

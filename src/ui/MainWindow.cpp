@@ -14,6 +14,7 @@
 #include "util/Icons.h"
 #include <QApplication>
 #include <QIcon>
+#include <QStringList>
 #include <QTimer>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -168,6 +169,13 @@ void MainWindow::setSettings(const AppSettings& s) {
     openMouseButton_ = s.openMouseButton == "middle" ? Qt::MiddleButton
                      : s.openMouseButton == "none"   ? Qt::NoButton
                                                      : Qt::RightButton;
+
+    // Build the hint label from the active bindings, e.g. "O / 右键".
+    QStringList keys;
+    if (!s.openKey.isEmpty())      keys << s.openKey;
+    if (s.openMouseButton == "right")  keys << T("Right-click");
+    else if (s.openMouseButton == "middle") keys << T("Middle-click");
+    if (preview_) preview_->setOpenKeysLabel(keys.join(QStringLiteral(" / ")));
 }
 
 void MainWindow::showPreviewRow(int row) {
