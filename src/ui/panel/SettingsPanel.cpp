@@ -168,7 +168,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     connect(checkBtn, &QPushButton::clicked, this, &SettingsPanel::checkUpdateRequested);
     auto* gh = new IconButton(QStringLiteral("github"), QStringLiteral("GitHub"), false);
     connect(gh, &QToolButton::clicked, this,
-            [] { QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com"))); });
+            [] { QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/Hunlongyu/hopy"))); });
     arl->addWidget(checkBtn);
     arl->addStretch(1);
     arl->addWidget(gh);
