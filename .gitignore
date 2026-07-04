@@ -5,3 +5,6 @@ CMakeCache.txt
 CMakeFiles/
 .cache/
 compile_commands.json
+
+# Subagent-driven dev scratch (ledger, briefs)
+.superpowers/
