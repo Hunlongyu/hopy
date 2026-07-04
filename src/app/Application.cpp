@@ -1,4 +1,5 @@
 #include "app/Application.h"
+#include "app/UpdateService.h"
 #include "storage/Database.h"
 #include "storage/ClipboardRepository.h"
 #include "clipboard/ClipboardMonitor.h"
@@ -9,10 +10,12 @@
 #include "hotkey/GlobalHotkey.h"
 #include "platform/CaretProbe.h"
 #include "platform/Autostart.h"
+#include "platform/UpdateInstaller.h"
 #include "util/Paths.h"
 #include "util/Hash.h"
 #include "util/I18n.h"
 #include <QApplication>
+#include <QCoreApplication>
 #include <QFile>
 #include <QImage>
 #include <QDateTime>
@@ -29,6 +32,7 @@ Application::Application() = default;
 Application::~Application() = default;
 
 void Application::start() {
+    platform::cleanupOldBinary(QCoreApplication::applicationFilePath());  // remove leftover *_old.exe from a prior update
     settings_ = Settings::load();
     setLanguage(settings_.language);   // apply the saved language before any UI is built
     applyTheme(settings_.theme);
@@ -40,6 +44,9 @@ void Application::start() {
     repo_ = std::make_unique<ClipboardRepository>(db);
 
     window_ = new MainWindow();
+    updater_ = new UpdateService(window_, this);
+    connect(window_, &MainWindow::updateRequested, updater_, &UpdateService::checkManually);
+    QTimer::singleShot(5000, updater_, &UpdateService::checkSilently);  // silent auto-check, non-blocking
     paste_ = new PasteService(this);
     monitor_ = new ClipboardMonitor(this);
     tray_ = new TrayIcon(this);

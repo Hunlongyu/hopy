@@ -13,6 +13,7 @@ class MainWindow;
 class GlobalHotkey;
 class TrayIcon;
 class PasteService;
+class UpdateService;
 struct CapturedPayload;
 
 // Named pipe / local socket used for the single-instance handshake.
@@ -39,6 +40,7 @@ private:
     TrayIcon* tray_ = nullptr;
     PasteService* paste_ = nullptr;
     QLocalServer* instanceServer_ = nullptr;
+    UpdateService* updater_ = nullptr;
 };
 
 } // namespace hopy
