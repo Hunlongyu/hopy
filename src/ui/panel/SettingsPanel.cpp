@@ -112,6 +112,15 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     hover_ = new QCheckBox();
     space_ = new QCheckBox();
     autostart_ = new QCheckBox();
+    openMouse_ = new QComboBox();
+    openMouse_->addItem(T("Right-click"), "right");
+    openMouse_->addItem(T("Middle-click"), "middle");
+    openMouse_->addItem(T("Off"), "none");
+    openMouse_->setFixedWidth(120);
+    openKey_ = new QComboBox();
+    openKey_->addItem(T("Off"), "");
+    for (char c = 'A'; c <= 'Z'; ++c) openKey_->addItem(QString(QChar(c)), QString(QChar(c)));
+    openKey_->setFixedWidth(120);
     maxHistory_ = new QSpinBox(); maxHistory_->setRange(10, 1000); maxHistory_->setFixedWidth(110);
     maxStorage_ = new QSpinBox(); maxStorage_->setRange(10, 1000); maxStorage_->setFixedWidth(110);
 
@@ -128,6 +137,8 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     addRow(bh, T("Paste immediately on confirm"), pasteImmediate_, true);
     addRow(bh, T("Hover preview"), hover_, true);
     addRow(bh, T("Space preview"), space_, true);
+    addRow(bh, T("Open with mouse"), openMouse_, true);
+    addRow(bh, T("Open with key"), openKey_, true);
     addRow(bh, T("Start on boot"), autostart_, false);
     col->addWidget(bhCard);
 
@@ -189,6 +200,8 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     connect(hotkey_, &HotkeyEdit::keySequenceChanged, this, [this] { emitChange(); });
     for (QCheckBox* c : {pasteImmediate_, hover_, space_, autostart_})
         connect(c, &QCheckBox::toggled, this, [this] { emitChange(); });
+    connect(openMouse_, &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
+    connect(openKey_,   &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
     connect(maxHistory_, &QSpinBox::valueChanged, this, [this] { emitChange(); });
     connect(maxStorage_, &QSpinBox::valueChanged, this, [this] { emitChange(); });
 }
@@ -206,6 +219,8 @@ void SettingsPanel::setSettings(const AppSettings& s) {
     hover_->setChecked(s.hoverPreview);
     space_->setChecked(s.spacePreview);
     autostart_->setChecked(s.autostart);
+    openMouse_->setCurrentIndex(qMax(0, openMouse_->findData(s.openMouseButton)));
+    openKey_->setCurrentIndex(qMax(0, openKey_->findData(s.openKey)));
     maxHistory_->setValue(s.maxHistory);
     maxStorage_->setValue(s.maxStorage);
     loading_ = false;
@@ -224,6 +239,8 @@ void SettingsPanel::emitChange() {
     s.hoverPreview = hover_->isChecked();
     s.spacePreview = space_->isChecked();
     s.autostart = autostart_->isChecked();
+    s.openMouseButton = openMouse_->currentData().toString();
+    s.openKey = openKey_->currentData().toString();
     s.maxHistory = maxHistory_->value();
     s.maxStorage = maxStorage_->value();
     current_ = s;

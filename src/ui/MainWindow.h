@@ -38,6 +38,7 @@ signals:
     void pinToggleRequested(qint64 id);
     void favoriteToggleRequested(qint64 id);
     void deleteRequested(qint64 id);
+    void openRequested(qint64 id);
     void hideRequested();
     void settingsChanged(const AppSettings& s);
     void updateRequested();
@@ -82,6 +83,8 @@ private:
     QListView* list_ = nullptr;
     RecordListModel* model_ = nullptr;
     RecordDelegate* delegate_ = nullptr;
+    int openKey_ = Qt::Key_O;              // 0 = keyboard open disabled
+    Qt::MouseButton openMouseButton_ = Qt::RightButton;  // Qt::NoButton = mouse open disabled
     QToolButton* helpBtn_ = nullptr;
     QToolButton* setBtn_ = nullptr;
     QToolButton* aaBtn_ = nullptr;   // search: case-sensitive toggle

@@ -19,6 +19,8 @@ struct AppSettings {
     QString previewSide = "left"; // "left" | "right"
     QString windowPlacement = "cursor"; // "cursor" (follow) | "center"
     int windowOpacity = 100;     // 40..100
+    QString openKey = "O";            // content-aware open: keyboard key ("" = disabled)
+    QString openMouseButton = "right"; // "right" | "middle" | "none"
 };
 
 class Settings {
