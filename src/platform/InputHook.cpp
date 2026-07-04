@@ -16,6 +16,7 @@ QWidget*      g_target    = nullptr;
 HWND          g_targetWnd = nullptr;
 InputHook*    g_self      = nullptr;
 bool          g_down[256] = {};
+bool          g_prevFgOwn = false;   // was the previously-seen foreground window one of ours?
 
 // True when h belongs to this process — our own combobox/menu popups and modal
 // dialogs are separate top-level windows. A foreground switch to one of them, or
@@ -117,8 +118,15 @@ LRESULT CALLBACK mouseProc(int code, WPARAM wp, LPARAM lp) {
 }
 
 void CALLBACK fgProc(HWINEVENTHOOK, DWORD, HWND hwnd, LONG, LONG, DWORD, DWORD) {
-    // Ignore our own popups/dialogs coming to the front (combobox dropdowns etc.).
-    if (g_self && !isOwnWindow(hwnd)) emit g_self->dismissRequested();   // switched windows (Alt-Tab etc.)
+    // Ignore our own popups/dialogs coming to the front (combobox dropdowns etc.),
+    // AND the transition back when one closes: hopy is non-activating, so when an
+    // own popup closes the foreground returns to whatever app was in front before
+    // us — a switch-away that isn't one. Suppress the dismiss when we're leaving an
+    // own window; genuine click-aways are still caught by the mouse hook.
+    const bool own = isOwnWindow(hwnd);
+    const bool prevOwn = g_prevFgOwn;
+    g_prevFgOwn = own;
+    if (g_self && !own && !prevOwn) emit g_self->dismissRequested();   // real switch to another app
 }
 
 } // namespace
