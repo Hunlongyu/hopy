@@ -52,6 +52,12 @@ const QHash<QByteArray, QString>& zh() {
         {"Hide window",            QStringLiteral("隐藏窗口")},
         {"Preview paging (mouse M4 down / M5 up)",
                             QStringLiteral("预览翻页（鼠标侧键 M4 下翻 / M5 上翻）")},
+        {"Navigation",              QStringLiteral("导航")},
+        {"Actions",                 QStringLiteral("操作")},
+        {"Window & preview",        QStringLiteral("窗口与预览")},
+        {"Jump to first / last",    QStringLiteral("跳到第一条 / 最后一条")},
+        {"Open link / email / file", QStringLiteral("打开链接 / 邮箱 / 文件")},
+        {"Preview current item",    QStringLiteral("预览当前项")},
         // Settings panel
         {"Dark",            QStringLiteral("深色")},
         {"Light",           QStringLiteral("浅色")},
