@@ -7,7 +7,7 @@ name: build-windows
 on:
   push:
     branches: [ main ]
-    paths-ignore: [ '**.md', 'docs/**', 'LICENSE' ]
+    tags: [ 'v*' ]          # a version tag also builds AND publishes a Release
   workflow_dispatch:
 
 concurrency:
@@ -17,6 +17,8 @@ concurrency:
 jobs:
   windows-static:
     runs-on: windows-2025-vs2026
+    permissions:
+      contents: write          # allow creating Releases + uploading assets on tag pushes
     defaults:
       run:
         shell: pwsh
@@ -79,3 +81,13 @@ jobs:
           name: hopy-windows-x64
           path: build/hopy.exe
           if-no-files-found: error
+
+      # On a version tag (v*), publish a GitHub Release with the exe attached.
+      - name: Publish Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $asset = "hopy-$env:GITHUB_REF_NAME-windows-x64.exe"
+          Copy-Item build/hopy.exe $asset
+          gh release create $env:GITHUB_REF_NAME $asset --title "hopy $env:GITHUB_REF_NAME" --generate-notes
