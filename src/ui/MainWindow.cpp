@@ -125,7 +125,12 @@ QWidget* MainWindow::buildListPage() {
     model_ = new RecordListModel(this);
     list_ = new QListView(page);
     list_->setModel(model_);
-    list_->setItemDelegate(new RecordDelegate(this));
+    delegate_ = new RecordDelegate(this);
+    list_->setItemDelegate(delegate_);
+    // Clicks on the card's action icons -> the same actions as the keyboard shortcuts.
+    connect(delegate_, &RecordDelegate::favoriteClicked, this, &MainWindow::favoriteToggleRequested);
+    connect(delegate_, &RecordDelegate::pinClicked,      this, &MainWindow::pinToggleRequested);
+    connect(delegate_, &RecordDelegate::deleteClicked,   this, &MainWindow::deleteRequested);
     list_->setUniformItemSizes(false);   // image rows vary in height
     list_->setSelectionMode(QAbstractItemView::SingleSelection);
     list_->setEditTriggers(QAbstractItemView::NoEditTriggers);
