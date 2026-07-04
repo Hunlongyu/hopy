@@ -3,6 +3,7 @@
 #include "storage/Record.h"
 #include "util/Icons.h"
 #include "util/ColorDetect.h"
+#include "util/TextInfo.h"
 #include <QApplication>
 #include <QPainter>
 #include <QPainterPath>
@@ -143,7 +144,7 @@ void RecordDelegate::paint(QPainter* p, const QStyleOptionViewItem& opt, const Q
     QFont mf = opt.font; mf.setPointSizeF(opt.font.pointSizeF() - 1);
     const int num = idx.row() + 1;
     const qint64 ms = idx.data(RecordListModel::CreatedAtRole).toLongLong();
-    const QString ts = QDateTime::fromMSecsSinceEpoch(ms).toString("yyyy-MM-dd HH:mm:ss");
+    const QString ts = relativeTime(ms, QDateTime::currentMSecsSinceEpoch());
     const QString meta = QString::number(num) + "   " + ts;
     auto drawMeta = [&](const QRect& metaRect) {
         p->setFont(mf);
