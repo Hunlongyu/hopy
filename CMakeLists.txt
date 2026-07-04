@@ -75,7 +75,8 @@ if(NOT BUILD_SHARED_LIBS)
   qt_import_plugins(hopy
     INCLUDE Qt6::QWindowsIntegrationPlugin
     INCLUDE_BY_TYPE sqldrivers Qt6::QSQLiteDriverPlugin
-    INCLUDE_BY_TYPE imageformats Qt6::QICOPlugin Qt6::QJpegPlugin)
+    INCLUDE_BY_TYPE imageformats Qt6::QICOPlugin Qt6::QJpegPlugin
+    INCLUDE_BY_TYPE tls Qt6::QSchannelBackendPlugin)
 endif()
 
 enable_testing()
