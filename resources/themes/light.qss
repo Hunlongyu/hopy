@@ -44,6 +44,8 @@ QKeySequenceEdit QLineEdit { background: #f0f0f0; }
 #SettingCard { background: #f5f5f5; border: 1px solid #e8e8e8; border-radius: 10px; }
 #PreviewCard { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 10px; color: #1a1a1a; }
 #CardTitle { color: #6b6b6b; font-size: 12px; }
+#HelpGroup { color: #55585e; font-size: 12px; font-weight: 600; padding-top: 6px; }
+#PreviewInfo { color: #6b6b6b; font-size: 11px; }
 #RowDivider { background: rgba(0, 0, 0, 0.06); border: none; }
 #KeyCap { background: #f0f0f0; border-radius: 6px; padding: 7px 14px; min-width: 64px; color: #1a1a1a; }
 
