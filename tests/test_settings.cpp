@@ -29,6 +29,21 @@ private slots:
         QCOMPARE(r.theme, QString("dark"));
         QCOMPARE(r.maxHistory, 100);
     }
+    void openDefaultsWhenAbsent() {
+        const AppSettings s = Settings::fromJson("{}");
+        QCOMPARE(s.openKey, QStringLiteral("O"));
+        QCOMPARE(s.openMouseButton, QStringLiteral("right"));
+    }
+    void openRoundTrips() {
+        AppSettings s; s.openKey = "G"; s.openMouseButton = "middle";
+        const AppSettings r = Settings::fromJson(Settings::toJson(s));
+        QCOMPARE(r.openKey, QStringLiteral("G"));
+        QCOMPARE(r.openMouseButton, QStringLiteral("middle"));
+    }
+    void openMouseButtonInvalidFallsBack() {
+        const AppSettings s = Settings::fromJson(R"({"openMouseButton":"bogus"})");
+        QCOMPARE(s.openMouseButton, QStringLiteral("right"));
+    }
 };
 QTEST_APPLESS_MAIN(TestSettings)
 #include "test_settings.moc"

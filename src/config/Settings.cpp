@@ -24,6 +24,8 @@ AppSettings Settings::fromJson(const QByteArray& json) {
     if (o.contains("previewSide"))  s.previewSide = o["previewSide"].toString(s.previewSide);
     if (o.contains("windowPlacement")) s.windowPlacement = o["windowPlacement"].toString(s.windowPlacement);
     if (o.contains("windowOpacity"))s.windowOpacity = o["windowOpacity"].toInt(s.windowOpacity);
+    if (o.contains("openKey"))         s.openKey = o["openKey"].toString(s.openKey);
+    if (o.contains("openMouseButton")) s.openMouseButton = o["openMouseButton"].toString(s.openMouseButton);
 
     if (s.theme != "dark" && s.theme != "light") s.theme = "dark";
     if (s.language != "zh" && s.language != "en" && s.language != "auto") s.language = "auto";
@@ -33,6 +35,8 @@ AppSettings Settings::fromJson(const QByteArray& json) {
     s.maxStorage = std::clamp(s.maxStorage, 10, 1000);
     if (s.maxStorage < s.maxHistory) s.maxStorage = s.maxHistory;
     s.windowOpacity = std::clamp(s.windowOpacity, 60, 100);   // floor keeps the window recoverable
+    if (s.openMouseButton != "right" && s.openMouseButton != "middle" && s.openMouseButton != "none")
+        s.openMouseButton = "right";
     return s;
 }
 
@@ -50,6 +54,8 @@ QByteArray Settings::toJson(const AppSettings& s) {
     o["previewSide"] = s.previewSide;
     o["windowPlacement"] = s.windowPlacement;
     o["windowOpacity"] = s.windowOpacity;
+    o["openKey"] = s.openKey;
+    o["openMouseButton"] = s.openMouseButton;
     return QJsonDocument(o).toJson(QJsonDocument::Indented);
 }
 
