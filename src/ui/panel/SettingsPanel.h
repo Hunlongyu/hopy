@@ -37,6 +37,8 @@ private:
     QCheckBox* hover_ = nullptr;
     QCheckBox* space_ = nullptr;
     QCheckBox* autostart_ = nullptr;
+    QComboBox* openMouse_ = nullptr;   // right / middle / off
+    QComboBox* openKey_ = nullptr;     // single-key picker: Off / A..Z
     QSpinBox* maxHistory_ = nullptr;
     QSpinBox* maxStorage_ = nullptr;
     QSlider* opacity_ = nullptr;
