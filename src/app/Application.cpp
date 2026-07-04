@@ -9,10 +9,12 @@
 #include "hotkey/GlobalHotkey.h"
 #include "platform/CaretProbe.h"
 #include "platform/Autostart.h"
+#include "platform/UpdateInstaller.h"
 #include "util/Paths.h"
 #include "util/Hash.h"
 #include "util/I18n.h"
 #include <QApplication>
+#include <QCoreApplication>
 #include <QFile>
 #include <QImage>
 #include <QDateTime>
@@ -29,6 +31,7 @@ Application::Application() = default;
 Application::~Application() = default;
 
 void Application::start() {
+    platform::cleanupOldBinary(QCoreApplication::applicationFilePath());  // remove leftover *_old.exe from a prior update
     settings_ = Settings::load();
     setLanguage(settings_.language);   // apply the saved language before any UI is built
     applyTheme(settings_.theme);
