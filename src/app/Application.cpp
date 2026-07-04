@@ -1,4 +1,5 @@
 #include "app/Application.h"
+#include "app/UpdateService.h"
 #include "storage/Database.h"
 #include "storage/ClipboardRepository.h"
 #include "clipboard/ClipboardMonitor.h"
@@ -43,6 +44,9 @@ void Application::start() {
     repo_ = std::make_unique<ClipboardRepository>(db);
 
     window_ = new MainWindow();
+    updater_ = new UpdateService(window_, this);
+    connect(window_, &MainWindow::updateRequested, updater_, &UpdateService::checkManually);
+    QTimer::singleShot(5000, updater_, &UpdateService::checkSilently);  // silent auto-check, non-blocking
     paste_ = new PasteService(this);
     monitor_ = new ClipboardMonitor(this);
     tray_ = new TrayIcon(this);
