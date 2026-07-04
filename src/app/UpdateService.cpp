@@ -23,14 +23,26 @@ UpdateService::UpdateService(QWidget* dialogParent, QObject* parent)
     connect(checker_, &UpdateChecker::upToDate, this, [this] {
         if (manual_) QMessageBox::information(parent_, T("Check for updates"),
                                               T("You're on the latest version."));
+        busy_ = false;
     });
     connect(checker_, &UpdateChecker::failed, this, [this](const QString& why) {
         if (manual_) offerReleasesPage(why);   // silent checks fail quietly
+        busy_ = false;
     });
 }
 
-void UpdateService::checkManually() { manual_ = true;  checker_->check(); }
-void UpdateService::checkSilently() { manual_ = false; checker_->check(); }
+void UpdateService::checkManually() {
+    if (busy_) return;
+    busy_ = true;
+    manual_ = true;
+    checker_->check();
+}
+void UpdateService::checkSilently() {
+    if (busy_) return;
+    busy_ = true;
+    manual_ = false;
+    checker_->check();
+}
 
 void UpdateService::onUpdateAvailable(const ReleaseInfo& info) {
     pending_ = info;
@@ -38,7 +50,8 @@ void UpdateService::onUpdateAvailable(const ReleaseInfo& info) {
         parent_, T("Update available"),
         T("A new version %1 is available. Update now?").arg(info.tagName),
         QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-    if (btn == QMessageBox::Yes) startDownload(info);
+    if (btn == QMessageBox::Yes) { startDownload(info); return; }
+    busy_ = false;
 }
 
 void UpdateService::startDownload(const ReleaseInfo& info) {
@@ -53,17 +66,19 @@ void UpdateService::startDownload(const ReleaseInfo& info) {
     connect(dlg, &QProgressDialog::canceled, this, [this] {
         // Best-effort: leave the running binary untouched; nothing has been swapped yet.
         offerReleasesPage(T("Update canceled."));
+        busy_ = false;
     });
     connect(downloader_, &UpdateDownloader::failed, dlg, [this, dlg](const QString& why) {
         dlg->close(); dlg->deleteLater();
         offerReleasesPage(why);
+        busy_ = false;
     });
     connect(downloader_, &UpdateDownloader::ready, dlg, [this, dlg](const QString& localExe) {
         dlg->close(); dlg->deleteLater();
         const QString cur = QCoreApplication::applicationFilePath();
         QString err;
         const auto r = platform::applyUpdate(localExe, cur, &err);
-        if (r != platform::InstallResult::Ok) { offerReleasesPage(err); return; }
+        if (r != platform::InstallResult::Ok) { offerReleasesPage(err); busy_ = false; return; }
         const auto restart = QMessageBox::question(
             parent_, T("Update ready"),
             T("Update installed. Restart now to apply?"),
@@ -72,6 +87,7 @@ void UpdateService::startDownload(const ReleaseInfo& info) {
             platform::restartApp(cur);
             QCoreApplication::quit();
         }
+        busy_ = false;
     });
 
     downloader_->download(info);

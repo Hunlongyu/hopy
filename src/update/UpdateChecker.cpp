@@ -56,6 +56,7 @@ void UpdateChecker::check() {
         }
         ReleaseInfo info;
         if (!parseLatestRelease(reply->readAll(), &info)) {
+            qWarning("update check: could not parse release info");
             emit failed(QStringLiteral("could not parse release info"));
             return;
         }

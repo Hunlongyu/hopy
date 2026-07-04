@@ -30,6 +30,7 @@ private:
     UpdateChecker*         checker_;
     UpdateDownloader*      downloader_;
     bool                   manual_ = false;
+    bool                   busy_ = false;
     ReleaseInfo            pending_;
 };
 
