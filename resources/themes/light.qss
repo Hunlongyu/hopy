@@ -47,7 +47,7 @@ QKeySequenceEdit QLineEdit { background: #f0f0f0; }
 #HelpGroup { color: #55585e; font-size: 12px; font-weight: 600; padding-top: 6px; }
 #PreviewInfo { color: #6b6b6b; font-size: 11px; }
 #RowDivider { background: rgba(0, 0, 0, 0.06); border: none; }
-#KeyCap { background: #f0f0f0; border-radius: 6px; padding: 7px 14px; min-width: 64px; color: #1a1a1a; }
+#KeyCap { background: #f0f0f0; border-radius: 6px; padding: 5px 14px; min-width: 64px; color: #1a1a1a; }
 
 QPushButton { background: #f0f0f0; border: 1px solid #e0e0e0; border-radius: 6px; padding: 6px 12px; color: #1a1a1a; }
 QPushButton:hover { background: #e8e8e8; }

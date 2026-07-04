@@ -54,7 +54,7 @@ QKeySequenceEdit QLineEdit { background: #3c3c3c; }
 #HelpGroup { color: #9aa0a6; font-size: 12px; font-weight: 600; padding-top: 6px; }
 #PreviewInfo { color: #888888; font-size: 11px; }
 #RowDivider { background: rgba(255, 255, 255, 0.06); border: none; }
-#KeyCap { background: rgba(255, 255, 255, 0.10); border-radius: 6px; padding: 7px 14px; min-width: 64px; color: #f0f0f0; }
+#KeyCap { background: rgba(255, 255, 255, 0.10); border-radius: 6px; padding: 5px 14px; min-width: 64px; color: #f0f0f0; }
 
 /* Hide all scrollbars (content still scrolls with the wheel) */
 QScrollBar:vertical, QScrollBar:horizontal { width: 0px; height: 0px; background: transparent; }
