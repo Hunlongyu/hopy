@@ -4,6 +4,7 @@
 #include "util/Icons.h"
 #include "util/I18n.h"
 #include "util/Version.h"
+#include "update/UpdateConfig.h"
 #include <QDesktopServices>
 #include <QUrl>
 #include <QMessageBox>
@@ -169,7 +170,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     connect(checkBtn, &QPushButton::clicked, this, &SettingsPanel::checkUpdateRequested);
     auto* gh = new IconButton(QStringLiteral("github"), QStringLiteral("GitHub"), false);
     connect(gh, &QToolButton::clicked, this,
-            [] { QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/Hunlongyu/hopy"))); });
+            [] { QDesktopServices::openUrl(QUrl(update::releasesPageUrl())); });
     arl->addWidget(checkBtn);
     arl->addStretch(1);
     arl->addWidget(gh);
