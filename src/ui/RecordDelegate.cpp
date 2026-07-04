@@ -11,8 +11,41 @@
 #include <QImageReader>
 #include <QFontMetrics>
 #include <QFileInfo>
+#include <QMouseEvent>
 
 namespace hopy {
+
+namespace { constexpr int kGlyphW = 22; }
+
+QRect RecordDelegate::actionsRect(const QRect& itemRect) {
+    const QRect card  = itemRect.adjusted(6, 3, -6, -3);       // kCardMarginX/Y
+    const QRect inner = card.adjusted(12, 12 - 2, -12, -12 + 2); // kPad
+    return QRect(inner.right() - kGlyphW * 3, inner.top(), kGlyphW * 3, 20);
+}
+
+int RecordDelegate::actionSlotAt(const QRect& itemRect, const QPoint& pos) {
+    const QRect actions = actionsRect(itemRect);
+    if (!actions.contains(pos)) return -1;
+    const int slot = (pos.x() - actions.left()) / kGlyphW;
+    return (slot >= 0 && slot <= 2) ? slot : -1;
+}
+
+bool RecordDelegate::editorEvent(QEvent* ev, QAbstractItemModel*,
+                                 const QStyleOptionViewItem& opt, const QModelIndex& idx) {
+    if (ev->type() != QEvent::MouseButtonRelease) return false;
+    auto* me = static_cast<QMouseEvent*>(ev);
+    if (me->button() != Qt::LeftButton) return false;
+    const int slot = actionSlotAt(opt.rect, me->position().toPoint());
+    if (slot < 0) return false;
+    const qint64 id = idx.data(RecordListModel::IdRole).toLongLong();
+    if (!id) return false;
+    switch (slot) {
+        case 0: emit favoriteClicked(id); break;
+        case 1: emit pinClicked(id);      break;
+        case 2: emit deleteClicked(id);   break;
+    }
+    return true;   // consume so the click doesn't also trigger row activation
+}
 
 namespace {
 constexpr int kCardMarginX = 6;
@@ -95,11 +128,10 @@ void RecordDelegate::paint(QPainter* p, const QStyleOptionViewItem& opt, const Q
     const QRect inner = card.adjusted(kPad, kPad - 2, -kPad, -kPad + 2);
 
     // Right-side action icons (favorite / pin / delete)
-    const int glyphW = 22;
     const int isz = 15;
-    const QRect actions(inner.right() - glyphW * 3, inner.top(), glyphW * 3, 20);
+    const QRect actions = actionsRect(opt.rect);
     auto drawIcon = [&](int slot, const QString& name, const QColor& col) {
-        QRect cell(actions.left() + glyphW * slot, actions.top(), glyphW, 20);
+        QRect cell(actions.left() + kGlyphW * slot, actions.top(), kGlyphW, 20);
         QRect ir(0, 0, isz, isz); ir.moveCenter(cell.center());
         p->drawPixmap(ir, icons::svgPixmap(name, col, isz));
     };

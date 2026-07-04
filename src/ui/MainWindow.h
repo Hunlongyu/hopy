@@ -18,6 +18,7 @@ namespace hopy {
 namespace platform { class InputHook; }
 
 class RecordListModel;
+class RecordDelegate;
 class SettingsPanel;
 class HelpPanel;
 class AboutPanel;
@@ -80,6 +81,7 @@ private:
     QLabel* searchIcon_ = nullptr;   // magnifier (re-tinted on theme change)
     QListView* list_ = nullptr;
     RecordListModel* model_ = nullptr;
+    RecordDelegate* delegate_ = nullptr;
     QToolButton* helpBtn_ = nullptr;
     QToolButton* setBtn_ = nullptr;
     QToolButton* aaBtn_ = nullptr;   // search: case-sensitive toggle
