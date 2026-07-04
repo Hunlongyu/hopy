@@ -5,6 +5,7 @@
 #include "clipboard/ClipboardMonitor.h"
 #include "clipboard/PasteService.h"
 #include "ui/MainWindow.h"
+#include "ui/OpenAction.h"
 #include "ui/Theme.h"
 #include "ui/TrayIcon.h"
 #include "hotkey/GlobalHotkey.h"
@@ -77,6 +78,9 @@ void Application::start() {
             [this](qint64 id) { repo_->toggleFavorite(id); refreshWindow(); });
     connect(window_, &MainWindow::deleteRequested, this,
             [this](qint64 id) { repo_->remove(id); refreshWindow(); });
+    connect(window_, &MainWindow::openRequested, this, [this](qint64 id) {
+        if (auto rec = repo_->getById(id)) openRecord(*rec);
+    });
 
     window_->setSettings(settings_);
     window_->setWindowOpacity(settings_.windowOpacity / 100.0);

@@ -34,6 +34,7 @@
 #include <QComboBox>
 #include <QAbstractSlider>
 #include <QSpinBox>
+#include <QKeySequence>
 #include <QKeySequenceEdit>
 #include <QAbstractItemView>
 #include <QStyle>
@@ -159,6 +160,14 @@ void MainWindow::setSettings(const AppSettings& s) {
     spacePreview_ = s.spacePreview;
     previewLeft_ = (s.previewSide != "right");
     followCursor_ = (s.windowPlacement != "center");
+
+    // Content-aware open bindings.
+    openKey_ = s.openKey.isEmpty()
+        ? 0
+        : QKeySequence(s.openKey)[0].key();   // single-key string -> key code
+    openMouseButton_ = s.openMouseButton == "middle" ? Qt::MiddleButton
+                     : s.openMouseButton == "none"   ? Qt::NoButton
+                                                     : Qt::RightButton;
 }
 
 void MainWindow::showPreviewRow(int row) {
@@ -415,6 +424,9 @@ bool MainWindow::handleNavKey(QKeyEvent* ev) {
             if (searchMode_) { setSearchMode(false); search_->clear(); return true; }
             emit hideRequested(); return true;
         case Qt::Key_Delete:  { const qint64 id = currentId(); if (id) emit deleteRequested(id); return true; }
+        case Qt::Key_Home:    if (model_->rowCount()) { list_->setCurrentIndex(model_->index(0, 0)); showPreviewRow(0); } return true;
+        case Qt::Key_End:     { const int last = model_->rowCount() - 1;
+                                if (last >= 0) { list_->setCurrentIndex(model_->index(last, 0)); showPreviewRow(last); } return true; }
         default: break;
     }
 
@@ -428,6 +440,7 @@ bool MainWindow::handleNavKey(QKeyEvent* ev) {
                 confirmByIndex(key - Qt::Key_1); return true;
             default: break;
         }
+        if (openKey_ && key == openKey_) { const qint64 id = currentId(); if (id) emit openRequested(id); return true; }
     }
     return false;
 }
@@ -440,6 +453,18 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
     if (ev->type() == QEvent::MouseButtonPress) {
         // Mouse side buttons (M1/M2) page a visible preview instead of hitting the list.
         if (pagePreview(static_cast<QMouseEvent*>(ev)->button())) return true;
+    }
+    if (ev->type() == QEvent::MouseButtonRelease && obj == list_->viewport()) {
+        auto* me = static_cast<QMouseEvent*>(ev);
+        if (openMouseButton_ != Qt::NoButton && me->button() == openMouseButton_) {
+            const QModelIndex ix = list_->indexAt(me->pos());
+            if (ix.isValid()) {
+                if (const ClipboardRecord* r = model_->recordAt(ix.row())) {
+                    emit openRequested(r->id);
+                    return true;   // consume; QListView has no context menu to suppress
+                }
+            }
+        }
     }
     if (ev->type() == QEvent::Leave && obj == list_->viewport()) {
         hoverRow_ = -1;
