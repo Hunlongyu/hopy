@@ -30,6 +30,7 @@ PreviewPopup::PreviewPopup(QWidget* parent) : QWidget(parent) {
 
     auto* lay = new QVBoxLayout(card);
     lay->setContentsMargins(12, 12, 12, 12);
+    lay->setSpacing(6);   // fixed gap between the info bar and the scroll area (used in showPreview's height calc)
     scroll_ = new QScrollArea(card);
     scroll_->setFrameShape(QFrame::NoFrame);
     scroll_->setWidgetResizable(false);
@@ -152,7 +153,10 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
 
     content_->setFixedSize(cw, qMax(1, ch));   // full content; scroll area shows a window into it
     const int w = cw + 24;
-    const int h = qMin(ch + 24, maxH);
+    // Height must budget for the info bar above the scroll area, else it eats
+    // into the content viewport and short text gets clipped to nothing.
+    const int infoH = info_->sizeHint().height();
+    const int h = qMin(ch + 24 + infoH + 6, maxH);   // +infoH + the 6px layout spacing
     resize(w, h);
     scroll_->verticalScrollBar()->setValue(0);
 
