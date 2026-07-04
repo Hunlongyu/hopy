@@ -84,6 +84,11 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     col->setSpacing(12);
 
     // Controls
+    language_ = new QComboBox();
+    language_->addItem(T("Auto"), "auto");
+    language_->addItem(QStringLiteral("中文"), "zh");
+    language_->addItem(QStringLiteral("English"), "en");
+    language_->setFixedWidth(120);
     theme_ = new QComboBox();
     theme_->addItem(T("Dark"), "dark");
     theme_->addItem(T("Light"), "light");
@@ -109,6 +114,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     maxStorage_ = new QSpinBox(); maxStorage_->setRange(10, 1000); maxStorage_->setFixedWidth(110);
 
     QVBoxLayout* ap; auto* apCard = makeCard(T("Appearance"), ap);
+    addRow(ap, T("Language"), language_, true);
     addRow(ap, T("Theme"), theme_, true);
     addRow(ap, T("Window position"), placement_, true);
     addRow(ap, T("Preview side"), previewSide_, true);
@@ -173,6 +179,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     scroll->setWidget(content);
     root->addWidget(scroll);
 
+    connect(language_, &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
     connect(theme_, &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
     connect(placement_, &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
     connect(previewSide_, &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
@@ -187,6 +194,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
 void SettingsPanel::setSettings(const AppSettings& s) {
     loading_ = true;
     current_ = s;
+    language_->setCurrentIndex(s.language == "zh" ? 1 : s.language == "en" ? 2 : 0);
     theme_->setCurrentIndex(s.theme == "light" ? 1 : 0);
     placement_->setCurrentIndex(s.windowPlacement == "center" ? 1 : 0);
     previewSide_->setCurrentIndex(s.previewSide == "right" ? 1 : 0);
@@ -204,6 +212,7 @@ void SettingsPanel::setSettings(const AppSettings& s) {
 void SettingsPanel::emitChange() {
     if (loading_) return;
     AppSettings s = current_;
+    s.language = language_->currentData().toString();
     s.theme = theme_->currentData().toString();
     s.windowPlacement = placement_->currentData().toString();
     s.previewSide = previewSide_->currentData().toString();

@@ -11,6 +11,7 @@ AppSettings Settings::fromJson(const QByteArray& json) {
     AppSettings s;
     const QJsonObject o = QJsonDocument::fromJson(json).object();
     if (o.contains("theme"))       s.theme = o["theme"].toString(s.theme);
+    if (o.contains("language"))    s.language = o["language"].toString(s.language);
     if (o.contains("hotkey"))      s.hotkey = o["hotkey"].toString(s.hotkey);
     if (o.contains("maxHistory"))  s.maxHistory = o["maxHistory"].toInt(s.maxHistory);
     if (o.contains("maxStorage"))  s.maxStorage = o["maxStorage"].toInt(s.maxStorage);
@@ -25,6 +26,7 @@ AppSettings Settings::fromJson(const QByteArray& json) {
     if (o.contains("windowOpacity"))s.windowOpacity = o["windowOpacity"].toInt(s.windowOpacity);
 
     if (s.theme != "dark" && s.theme != "light") s.theme = "dark";
+    if (s.language != "zh" && s.language != "en" && s.language != "auto") s.language = "auto";
     if (s.previewSide != "left" && s.previewSide != "right") s.previewSide = "left";
     if (s.windowPlacement != "cursor" && s.windowPlacement != "center") s.windowPlacement = "cursor";
     s.maxHistory = std::clamp(s.maxHistory, 10, 1000);
@@ -37,6 +39,7 @@ AppSettings Settings::fromJson(const QByteArray& json) {
 QByteArray Settings::toJson(const AppSettings& s) {
     QJsonObject o;
     o["theme"] = s.theme;
+    o["language"] = s.language;
     o["hotkey"] = s.hotkey;
     o["maxHistory"] = s.maxHistory;
     o["maxStorage"] = s.maxStorage;

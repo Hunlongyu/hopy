@@ -93,16 +93,7 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
 
     stack_->addWidget(buildListPage());       // index 0
 
-    settingsPanel_ = new SettingsPanel(this);
-    helpPanel_ = new HelpPanel(this);
-    stack_->addWidget(settingsPanel_);         // index 1
-    stack_->addWidget(helpPanel_);             // index 2
-
-    connect(settingsPanel_, &SettingsPanel::backRequested, this, &MainWindow::showList);
-    connect(helpPanel_, &HelpPanel::backRequested, this, &MainWindow::showList);
-    connect(settingsPanel_, &SettingsPanel::settingsChanged, this, &MainWindow::settingsChanged);
-    connect(settingsPanel_, &SettingsPanel::checkUpdateRequested, this, &MainWindow::updateRequested);
-    connect(settingsPanel_, &SettingsPanel::clearAllRequested, this, &MainWindow::clearAllRequested);
+    buildPanels();                             // settings (index 1) + help (index 2)
 
     // Preview popup + hover trigger
     preview_ = new PreviewPopup(this);
@@ -186,6 +177,42 @@ void MainWindow::showList()     { stack_->setCurrentIndex(0); }
 void MainWindow::showSettings() { stack_->setCurrentIndex(1); }
 void MainWindow::showHelp()     { stack_->setCurrentIndex(2); }
 
+void MainWindow::buildPanels() {
+    settingsPanel_ = new SettingsPanel(this);
+    helpPanel_ = new HelpPanel(this);
+    stack_->addWidget(settingsPanel_);         // index 1
+    stack_->addWidget(helpPanel_);             // index 2
+    connect(settingsPanel_, &SettingsPanel::backRequested, this, &MainWindow::showList);
+    connect(helpPanel_, &HelpPanel::backRequested, this, &MainWindow::showList);
+    connect(settingsPanel_, &SettingsPanel::settingsChanged, this, &MainWindow::settingsChanged);
+    connect(settingsPanel_, &SettingsPanel::checkUpdateRequested, this, &MainWindow::updateRequested);
+    connect(settingsPanel_, &SettingsPanel::clearAllRequested, this, &MainWindow::clearAllRequested);
+}
+
+void MainWindow::retranslateTips() {
+    helpBtn_->setToolTip(T("Shortcuts"));
+    setBtn_->setToolTip(T("Settings"));
+    aaBtn_->setToolTip(T("Case sensitive"));
+    wwBtn_->setToolTip(T("Whole word"));
+    btnText_->setToolTip(T("Text"));
+    btnImage_->setToolTip(T("Image"));
+    btnFiles_->setToolTip(T("Files"));
+    btnFav_->setToolTip(T("Favorites only"));
+}
+
+void MainWindow::retranslate() {
+    // The list page is icon-only; translated text lives in the two panels plus a
+    // few tooltips. Rebuild the panels in the current language, refresh tooltips,
+    // and stay on the settings page (where the switch was made).
+    stack_->removeWidget(settingsPanel_);
+    stack_->removeWidget(helpPanel_);
+    settingsPanel_->deleteLater();
+    helpPanel_->deleteLater();
+    buildPanels();
+    retranslateTips();
+    showSettings();
+}
+
 QWidget* MainWindow::buildHeader() {
     auto* w = new QWidget(this);
     auto* h = new QHBoxLayout(w);
@@ -195,11 +222,11 @@ QWidget* MainWindow::buildHeader() {
     h->addWidget(title);
     h->addStretch(1);
     // Update-check and About moved into the Settings panel; header keeps help + settings.
-    auto* hlp = iconButton(QStringLiteral("help"),     T("Shortcuts"));
-    auto* set = iconButton(QStringLiteral("settings"), T("Settings"));
-    connect(hlp, &QToolButton::clicked, this, &MainWindow::showHelp);
-    connect(set, &QToolButton::clicked, this, &MainWindow::showSettings);
-    for (auto* b : {hlp, set}) h->addWidget(b);
+    helpBtn_ = iconButton(QStringLiteral("help"),     T("Shortcuts"));
+    setBtn_  = iconButton(QStringLiteral("settings"), T("Settings"));
+    connect(helpBtn_, &QToolButton::clicked, this, &MainWindow::showHelp);
+    connect(setBtn_,  &QToolButton::clicked, this, &MainWindow::showSettings);
+    for (auto* b : {helpBtn_, setBtn_}) h->addWidget(b);
     return w;
 }
 
@@ -230,15 +257,15 @@ QWidget* MainWindow::buildSearchFilterRow() {
     searchIcon_->setPixmap(icons::svgPixmap(QStringLiteral("search"), palette().color(QPalette::Mid), 16));
     searchIcon_->setAttribute(Qt::WA_TransparentForMouseEvents);
     auto* mag = searchIcon_;
-    auto* aa = inSearchToggle(QStringLiteral("Aa"), T("Case sensitive"));
-    auto* ww = inSearchToggle(QStringLiteral("W"), T("Whole word"));
+    aaBtn_ = inSearchToggle(QStringLiteral("Aa"), T("Case sensitive"));
+    wwBtn_ = inSearchToggle(QStringLiteral("W"), T("Whole word"));
     auto* sl = new QHBoxLayout(search_);
     sl->setContentsMargins(14, 0, 8, 0);      // magnifier sits a little in from the left edge
     sl->setSpacing(2);
     sl->addWidget(mag);
     sl->addStretch(1);
-    sl->addWidget(aa);
-    sl->addWidget(ww);
+    sl->addWidget(aaBtn_);
+    sl->addWidget(wwBtn_);
     search_->setTextMargins(34, 0, 62, 0);    // clear the magnifier (left) and Aa/W (right)
     h->addWidget(search_, 1);
     h->addSpacing(2);

@@ -48,6 +48,8 @@ const QHash<QByteArray, QString>& zh() {
         {"Left",            QStringLiteral("左侧")},
         {"Right",           QStringLiteral("右侧")},
         {"Appearance",      QStringLiteral("外观")},
+        {"Language",        QStringLiteral("语言")},
+        {"Auto",            QStringLiteral("自动")},
         {"Theme",           QStringLiteral("主题")},
         {"Window position", QStringLiteral("显示位置")},
         {"Preview side",    QStringLiteral("预览位置")},
@@ -88,6 +90,12 @@ const QHash<QByteArray, QString>& zh() {
 
 void initLanguage() {
     g_chinese = (QLocale::system().language() == QLocale::Chinese);
+}
+
+void setLanguage(const QString& lang) {
+    if (lang == "zh")      g_chinese = true;
+    else if (lang == "en") g_chinese = false;
+    else                   g_chinese = (QLocale::system().language() == QLocale::Chinese);   // "auto"
 }
 
 QString T(const char* english) {

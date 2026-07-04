@@ -20,6 +20,7 @@
 #include <QLocalSocket>
 #include <QMessageBox>
 #include <QKeySequence>
+#include <QTimer>
 #include <QDir>
 
 namespace hopy {
@@ -29,6 +30,7 @@ Application::~Application() = default;
 
 void Application::start() {
     settings_ = Settings::load();
+    setLanguage(settings_.language);   // apply the saved language before any UI is built
     applyTheme(settings_.theme);
     platform::enableUiaAccessibility();   // pose as AT client so CEF editors expose their caret
 
@@ -73,6 +75,7 @@ void Application::start() {
     window_->setWindowOpacity(settings_.windowOpacity / 100.0);
     connect(window_, &MainWindow::settingsChanged, this, [this](const AppSettings& in) {
         AppSettings s = in;
+        const bool langChanged = (s.language != settings_.language);
         if (s.theme != settings_.theme) applyTheme(s.theme);
         if (s.hotkey != settings_.hotkey) {
             if (!hotkey_->setShortcut(s.hotkey)) {
@@ -91,6 +94,16 @@ void Application::start() {
         settings_ = s;
         Settings::save(s);
         refreshWindow();
+        if (langChanged) {
+            setLanguage(s.language);
+            // UI text is baked in at build time via T(); rebuild it. Deferred so we
+            // never tear the settings panel down from inside its own signal.
+            QTimer::singleShot(0, this, [this] {
+                window_->retranslate();
+                window_->setSettings(settings_);
+                tray_->retranslate();
+            });
+        }
     });
     connect(tray_, &TrayIcon::settingsRequested, this, &Application::showWindow);
     connect(window_, &MainWindow::clearAllRequested, this, [this] {

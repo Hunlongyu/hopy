@@ -28,6 +28,7 @@ private:
 
     AppSettings current_;
     bool loading_ = false;
+    QComboBox* language_ = nullptr;
     QComboBox* theme_ = nullptr;
     QComboBox* placement_ = nullptr;
     QComboBox* previewSide_ = nullptr;

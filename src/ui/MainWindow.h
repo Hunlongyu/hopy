@@ -30,6 +30,7 @@ public:
     void setRecords(const QList<ClipboardRecord>& records);
     void setSettings(const AppSettings& s);
     void showAtCursor();
+    void retranslate();   // rebuild the translated UI after a language change
 
 signals:
     void confirmRequested(qint64 id, bool plainText);
@@ -54,6 +55,8 @@ private:
     QWidget* buildListPage();
     QWidget* buildHeader();
     QWidget* buildSearchFilterRow();
+    void buildPanels();          // create + wire the settings & help panels
+    void retranslateTips();      // refresh header / filter / search tooltips
     void showList();
     void showSettings();
     void showHelp();
@@ -77,6 +80,10 @@ private:
     QLabel* searchIcon_ = nullptr;   // magnifier (re-tinted on theme change)
     QListView* list_ = nullptr;
     RecordListModel* model_ = nullptr;
+    QToolButton* helpBtn_ = nullptr;
+    QToolButton* setBtn_ = nullptr;
+    QToolButton* aaBtn_ = nullptr;   // search: case-sensitive toggle
+    QToolButton* wwBtn_ = nullptr;   // search: whole-word toggle
     QToolButton* btnText_ = nullptr;
     QToolButton* btnImage_ = nullptr;
     QToolButton* btnFiles_ = nullptr;
