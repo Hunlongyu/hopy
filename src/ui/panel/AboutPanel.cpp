@@ -1,6 +1,7 @@
 #include "ui/panel/AboutPanel.h"
 #include "util/Icons.h"
 #include "util/I18n.h"
+#include "util/Version.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -40,7 +41,7 @@ AboutPanel::AboutPanel(QWidget* parent) : QWidget(parent) {
     name->setAlignment(Qt::AlignCenter);
     root->addWidget(name);
 
-    auto* ver = new QLabel(T("Version 0.1.0"));
+    auto* ver = new QLabel(T("Version %1").arg(currentVersion()));
     ver->setAlignment(Qt::AlignCenter);
     root->addWidget(ver);
 

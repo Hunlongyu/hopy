@@ -3,6 +3,7 @@
 #include "ui/HotkeyEdit.h"
 #include "util/Icons.h"
 #include "util/I18n.h"
+#include "util/Version.h"
 #include <QDesktopServices>
 #include <QUrl>
 #include <QMessageBox>
@@ -150,7 +151,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     col->addWidget(stCard);
 
     QVBoxLayout* ab; auto* abCard = makeCard(T("About"), ab);
-    auto* nameVer = new QLabel(QStringLiteral("Hopy · ") + T("Version 0.1.0"));
+    auto* nameVer = new QLabel(QStringLiteral("Hopy · ") + T("Version %1").arg(currentVersion()));
     nameVer->setStyleSheet(QStringLiteral("font-weight:600;"));
     ab->addWidget(nameVer);
     ab->addSpacing(4);

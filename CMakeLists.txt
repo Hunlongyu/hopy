@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(hopy LANGUAGES CXX)
+project(hopy VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -43,6 +43,13 @@ list(REMOVE_ITEM HOPY_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
 add_library(hopy_lib STATIC ${HOPY_SOURCES})
 target_include_directories(hopy_lib PUBLIC src)
+
+# Single-source the app version: generate a header from project(VERSION ...).
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/util/BuildVersion.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/generated/BuildVersion.h @ONLY)
+target_include_directories(hopy_lib PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/generated)
+
 target_link_libraries(hopy_lib PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Sql Qt6::Svg Qt6::Network QHotkey::QHotkey)
 
 # Platform system libraries

@@ -70,7 +70,7 @@ const QHash<QByteArray, QString>& zh() {
         {"Check for updates", QStringLiteral("检查更新")},
         // About
         {"About",           QStringLiteral("关于")},
-        {"Version 0.1.0",   QStringLiteral("版本 0.1.0")},
+        {"Version %1",      QStringLiteral("版本 %1")},
         {"A lightweight clipboard manager built with Qt 6 and SQLite.",
                             QStringLiteral("使用 Qt 6 与 SQLite 构建的轻量剪贴板管理器。")},
         {"MIT License",     QStringLiteral("MIT 开源协议")},
