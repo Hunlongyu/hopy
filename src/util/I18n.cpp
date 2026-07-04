@@ -21,6 +21,11 @@ const QHash<QByteArray, QString>& zh() {
         {"All",             QStringLiteral("全部")},
         // Preview
         {"(image missing)", QStringLiteral("（图片缺失）")},
+        // Relative time
+        {"just now",        QStringLiteral("刚刚")},
+        {"%1 min ago",      QStringLiteral("%1 分钟前")},
+        {"%1 h ago",        QStringLiteral("%1 小时前")},
+        {"Yesterday %1",    QStringLiteral("昨天 %1")},
         // Hotkey recorder
         {"Click, then press a shortcut", QStringLiteral("点击后按下快捷键")},
         {"Press Ctrl / Alt / Win plus a key; Backspace clears, Esc cancels",
