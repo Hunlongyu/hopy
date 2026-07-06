@@ -1,7 +1,9 @@
 name: release
 
-# Build the static single-file hopy.exe, generate a matching SHA-256
-# checksums.txt, and publish a GitHub Release when a v* tag is pushed.
+# Manual-only static build + release on a SELF-HOSTED Windows runner (exact local
+# toolchain). Tag (v*) release publishing is handled by build-windows.yml on
+# GitHub-hosted runners; this workflow is kept for when a self-hosted runner is
+# registered — run it from the Actions tab (optionally on a tag ref to publish).
 #
 # Runs on a SELF-HOSTED Windows runner: hopy links a static Qt 6.11.1 built
 # with MSVC 2026 (VS 18 Insiders). GitHub-hosted runners ship VS 2022, and
@@ -10,9 +12,8 @@ name: release
 # CMakePresets.json (win-static-release). See SETUP notes at the bottom.
 
 on:
-  push:
-    tags: ['v*']            # publish a release on version tags
-  workflow_dispatch: {}     # manual dry-run (builds + tests, publishes nothing)
+  workflow_dispatch: {}     # manual only — tag (v*) releases live in build-windows.yml,
+                            # so this no longer auto-runs (and no longer hangs) on a tag
 
 permissions:
   contents: write           # required to create the release
