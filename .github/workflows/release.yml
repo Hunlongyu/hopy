@@ -1,0 +1,76 @@
+name: release
+
+# Build the static single-file hopy.exe, generate a matching SHA-256
+# checksums.txt, and publish a GitHub Release when a v* tag is pushed.
+#
+# Runs on a SELF-HOSTED Windows runner: hopy links a static Qt 6.11.1 built
+# with MSVC 2026 (VS 18 Insiders). GitHub-hosted runners ship VS 2022, and
+# mixing MSVC major versions is a hard LNK error — so the build must run on a
+# machine that has the MSVC 2026 toolchain AND the static Qt prefix pinned in
+# CMakePresets.json (win-static-release). See SETUP notes at the bottom.
+
+on:
+  push:
+    tags: ['v*']            # publish a release on version tags
+  workflow_dispatch: {}     # manual dry-run (builds + tests, publishes nothing)
+
+permissions:
+  contents: write           # required to create the release
+
+env:
+  # MSVC 2026 (VS 18 Insiders) developer environment on the runner.
+  # Adjust this path if your Visual Studio install differs.
+  VCVARS: C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Auxiliary\Build\vcvars64.bat
+
+jobs:
+  release:
+    runs-on: [self-hosted, windows]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure, build & test (static single-file)
+        shell: cmd
+        run: |
+          call "%VCVARS%" || exit /b 1
+          cmake --preset win-static-release || exit /b 1
+          cmake --build --preset win-static-release || exit /b 1
+          ctest --preset win-static-release --output-on-failure || exit /b 1
+
+      - name: Stage exe + checksums
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if (-not $tag.StartsWith("v")) { $tag = "v0.0.0-dev" }   # workflow_dispatch has no tag
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $name = "hopy-$tag-windows-x64.exe"
+          Copy-Item build\win-static-release\hopy.exe "dist\$name" -Force
+          # The checksum filename MUST match the exe exactly — hopy's updater
+          # looks up the hash by asset filename. Format: "<sha256>  <filename>".
+          $h = (Get-FileHash "dist\$name" -Algorithm SHA256).Hash.ToLower()
+          "$h  $name" | Out-File -Encoding ascii -NoNewline dist\checksums.txt
+          Get-Content dist\checksums.txt
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: hopy ${{ github.ref_name }}
+          generate_release_notes: true      # auto changelog; edit afterwards if you want richer notes
+          files: |
+            dist/hopy-*-windows-x64.exe
+            dist/checksums.txt
+
+# ── SETUP: register the self-hosted runner (one time) ────────────────────────
+# On the machine that builds hopy (has MSVC 2026 + the static Qt prefix):
+#   1. GitHub → repo Settings → Actions → Runners → "New self-hosted runner"
+#      (Windows x64). Follow the shown commands to download + configure.
+#   2. The runner picks up the default labels self-hosted, Windows, X64 —
+#      matching this job's `runs-on: [self-hosted, windows]`.
+#   3. Run it: `run.cmd` (foreground) or install as a service (`svc.cmd install`).
+#   4. Ensure CMake + Ninja are on PATH for the runner's environment, and that
+#      CMakePresets.json's win-static-release still points at the local static Qt.
+#
+# To cut a release: bump project(VERSION) in CMakeLists.txt, commit, then
+#   git tag -a vX.Y.Z -m "hopy vX.Y.Z" && git push origin vX.Y.Z
+# The workflow builds, tests, hashes, and publishes the release with both assets.
