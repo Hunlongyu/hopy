@@ -4,14 +4,41 @@
 #include "update/UpdateConfig.h"
 #include "platform/UpdateInstaller.h"
 #include "util/I18n.h"
+#include "util/Paths.h"
 #include <QNetworkAccessManager>
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QDesktopServices>
 #include <QCoreApplication>
+#include <QDateTime>
+#include <QFile>
 #include <QUrl>
 
 namespace hopy {
+
+namespace {
+constexpr qint64 kCheckIntervalMs = 24LL * 60 * 60 * 1000;   // silent check at most once/day
+QString stampPath() { return paths::dataDir() + QStringLiteral("/last_update_check"); }
+}
+
+bool UpdateService::dueForCheck(qint64 lastCheckMs, qint64 nowMs) {
+    if (lastCheckMs <= 0) return true;                   // never checked
+    const qint64 elapsed = nowMs - lastCheckMs;
+    return elapsed < 0 || elapsed >= kCheckIntervalMs;   // clock skew, or a full interval passed
+}
+
+qint64 UpdateService::lastCheckMs() const {
+    QFile f(stampPath());
+    if (!f.open(QIODevice::ReadOnly)) return 0;
+    return f.readAll().trimmed().toLongLong();
+}
+
+void UpdateService::recordCheckNow() {
+    paths::ensureDir(paths::dataDir());
+    QFile f(stampPath());
+    if (f.open(QIODevice::WriteOnly))
+        f.write(QByteArray::number(QDateTime::currentMSecsSinceEpoch()));
+}
 
 UpdateService::UpdateService(QWidget* dialogParent, QObject* parent)
     : QObject(parent), parent_(dialogParent) {
@@ -25,6 +52,13 @@ UpdateService::UpdateService(QWidget* dialogParent, QObject* parent)
                                               T("You're on the latest version."));
         busy_ = false;
     });
+    connect(checker_, &UpdateChecker::rateLimited, this, [this] {
+        // Transient: GitHub's unauthenticated 60/hour limit. Not a real failure,
+        // so don't offer the downloads page — just tell the user to retry later.
+        if (manual_) QMessageBox::information(parent_, T("Check for updates"),
+                                              T("Checked too often — please try again later."));
+        busy_ = false;
+    });
     connect(checker_, &UpdateChecker::failed, this, [this](const QString& why) {
         if (manual_) offerReleasesPage(why);   // silent checks fail quietly
         busy_ = false;
@@ -35,12 +69,15 @@ void UpdateService::checkManually() {
     if (busy_) return;
     busy_ = true;
     manual_ = true;
+    recordCheckNow();
     checker_->check();
 }
 void UpdateService::checkSilently() {
     if (busy_) return;
+    if (!dueForCheck(lastCheckMs(), QDateTime::currentMSecsSinceEpoch())) return;   // throttle to once/day
     busy_ = true;
     manual_ = false;
+    recordCheckNow();
     checker_->check();
 }
 

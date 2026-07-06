@@ -19,9 +19,14 @@ public:
     explicit UpdateChecker(QNetworkAccessManager* nam, QObject* parent = nullptr);
     void check();
 
+    // Pure: is this reply GitHub's rate-limit response? HTTP 429, or 403 with
+    // X-RateLimit-Remaining: 0 (the unauthenticated 60/hour limit).
+    static bool isRateLimited(int httpStatus, const QByteArray& rateLimitRemaining);
+
 signals:
     void upToDate();
     void updateAvailable(hopy::ReleaseInfo info);
+    void rateLimited();          // hit GitHub's API rate limit — transient, not a real failure
     void failed(QString reason);
 
 private:

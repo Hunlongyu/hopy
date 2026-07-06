@@ -18,12 +18,18 @@ public:
     explicit UpdateService(QWidget* dialogParent, QObject* parent = nullptr);
 
     void checkManually();   // user-initiated: report both "up to date" and "available"
-    void checkSilently();   // startup: only surface when an update is available
+    void checkSilently();   // startup: throttled — at most one check per 24h
+
+    // Pure: has enough time passed since the last check (epoch ms) to check again?
+    // True when never checked, >= 24h elapsed, or the clock moved backwards.
+    static bool dueForCheck(qint64 lastCheckMs, qint64 nowMs);
 
 private:
     void onUpdateAvailable(const ReleaseInfo& info);
     void startDownload(const ReleaseInfo& info);
     void offerReleasesPage(const QString& reason);   // degrade path
+    qint64 lastCheckMs() const;   // persisted timestamp of the last performed check
+    void recordCheckNow();        // stamp "now" as the last check time
 
     QWidget*               parent_;
     QNetworkAccessManager* nam_;
