@@ -39,6 +39,11 @@ bool parseLatestRelease(const QByteArray& json, ReleaseInfo* out) {
     return true;
 }
 
+bool UpdateChecker::isRateLimited(int httpStatus, const QByteArray& rateLimitRemaining) {
+    if (httpStatus == 429) return true;
+    return httpStatus == 403 && rateLimitRemaining.trimmed() == "0";
+}
+
 UpdateChecker::UpdateChecker(QNetworkAccessManager* nam, QObject* parent)
     : QObject(parent), nam_(nam) {}
 
@@ -50,6 +55,12 @@ void UpdateChecker::check() {
     connect(reply, &QNetworkReply::finished, this, [this, reply] {
         reply->deleteLater();
         if (reply->error() != QNetworkReply::NoError) {
+            const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            if (isRateLimited(status, reply->rawHeader("X-RateLimit-Remaining"))) {
+                qWarning("update check: GitHub API rate limit reached");
+                emit rateLimited();
+                return;
+            }
             qWarning("update check failed: %s", qPrintable(reply->errorString()));
             emit failed(reply->errorString());
             return;
