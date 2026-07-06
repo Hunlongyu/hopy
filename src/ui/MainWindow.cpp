@@ -454,10 +454,8 @@ bool MainWindow::handleNavKey(QKeyEvent* ev) {
 }
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
-    if (ev->type() == QEvent::KeyPress) {
-        auto* ke = static_cast<QKeyEvent*>(ev);
-        if (handleNavKey(ke)) return true;
-    }
+    // Keys are posted straight to MainWindow by the input hook (this window never
+    // holds OS focus), so search_/list_ never see a KeyPress here — only mouse.
     if (ev->type() == QEvent::MouseButtonPress) {
         // Mouse side buttons (M1/M2) page a visible preview instead of hitting the list.
         if (pagePreview(static_cast<QMouseEvent*>(ev)->button())) return true;

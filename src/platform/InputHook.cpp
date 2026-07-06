@@ -43,8 +43,6 @@ int vkToQt(DWORD vk, bool shift) {
     case VK_DELETE: return Qt::Key_Delete;
     case VK_HOME:   return Qt::Key_Home;
     case VK_END:    return Qt::Key_End;
-    case VK_PRIOR:  return Qt::Key_PageUp;
-    case VK_NEXT:   return Qt::Key_PageDown;
     default:        return 0;
     }
 }
