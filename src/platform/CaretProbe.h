@@ -1,16 +1,12 @@
 #pragma once
 #include <QRect>
-#include <QString>
 
 namespace hopy::platform {
 
-// The foreground window's text caret, in NATIVE / physical screen pixels, plus
-// the physical rect and GDI device name of the monitor it lives on. Returned by
-// queryCaret() using whichever detection method works for the focused app.
+// The foreground window's text caret, in NATIVE / physical screen pixels. Returned
+// by queryCaret() using whichever detection method works for the focused app.
 struct CaretInfo {
     QRect caret;    // caret rectangle, physical screen pixels
-    QRect monitor;  // its monitor's rectangle, physical screen pixels
-    QString device; // GDI device name, e.g. "\\.\DISPLAY1"
 };
 
 // Find the caret of the foreground window. Tries, in order: UI Automation

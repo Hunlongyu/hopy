@@ -13,6 +13,10 @@
 namespace hopy::platform {
 namespace {
 
+// The startup UI Automation instance (created in enableUiaAccessibility). Reused
+// by the caret probes below so no fresh IUIAutomation is built per hotkey press.
+IUIAutomation* g_uiaKeepAlive = nullptr;
+
 // First bounding rectangle of a UIA text range (physical px). False if empty.
 bool uiaRangeRect(IUIAutomationTextRange* r, RECT& o) {
     if (!r) return false;
@@ -63,104 +67,92 @@ bool uiaCaretFromRange(IUIAutomationTextRange* rng, RECT& out) {
 }
 
 bool caretRectViaUIA(RECT& out) {
-    const HRESULT ci = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    const bool balance = (ci == S_OK || ci == S_FALSE);   // don't uninit on CHANGED_MODE
+    IUIAutomation* uia = g_uiaKeepAlive;   // reuse the startup instance — no per-call CoCreateInstance
+    if (!uia) return false;
     bool ok = false;
-    IUIAutomation* uia = nullptr;
-    if (SUCCEEDED(CoCreateInstance(__uuidof(CUIAutomation), nullptr, CLSCTX_INPROC_SERVER,
-                                   __uuidof(IUIAutomation), reinterpret_cast<void**>(&uia))) && uia) {
-        // Acquire a focused element that exposes TextPattern. CEF/Chromium apps
-        // (DingTalk / Feishu docs) initially hand back only the outer Chromium
-        // widget with no text interface until their accessibility tree is built;
-        // nudge THAT window with WM_GETOBJECT and retry so the caret becomes
-        // readable. Only browser widgets are worth waiting on — a plain non-text
-        // focus (a button) bails immediately.
-        IUIAutomationElement* el = nullptr;
-        IUIAutomationTextPattern* tp = nullptr;
-        for (int attempt = 0; attempt < 8; ++attempt) {
-            if (el) { el->Release(); el = nullptr; }
-            if (FAILED(uia->GetFocusedElement(&el)) || !el) break;
-            if (SUCCEEDED(el->GetCurrentPatternAs(UIA_TextPatternId, __uuidof(IUIAutomationTextPattern),
-                                                  reinterpret_cast<void**>(&tp))) && tp)
-                break;                                   // got a text element
-            UIA_HWND h = nullptr;
-            el->get_CurrentNativeWindowHandle(&h);
-            wchar_t cls[32] = {};
-            if (h) GetClassNameW(reinterpret_cast<HWND>(h), cls, 32);
-            if (wcsncmp(cls, L"Chrome_WidgetWin", 16) != 0) break;   // not a browser → don't wait
-            DWORD_PTR r = 0;
-            SendMessageTimeoutW(reinterpret_cast<HWND>(h), WM_GETOBJECT, 0, OBJID_CLIENT,
-                                SMTO_ABORTIFHUNG, 120, &r);
-            Sleep(35);
-        }
-        if (el && tp) {
-            // (a) TextPattern2::GetCaretRange — the most direct, cleanest caret.
-            IUIAutomationTextPattern2* tp2 = nullptr;
-            if (SUCCEEDED(el->GetCurrentPatternAs(UIA_TextPattern2Id,
-                    __uuidof(IUIAutomationTextPattern2), reinterpret_cast<void**>(&tp2))) && tp2) {
-                BOOL activeEnd = FALSE;
-                IUIAutomationTextRange* caretRange = nullptr;
-                if (SUCCEEDED(tp2->GetCaretRange(&activeEnd, &caretRange)) && caretRange) {
-                    if (uiaCaretFromRange(caretRange, out)) ok = true;
-                    caretRange->Release();
-                }
-                tp2->Release();
-            }
-            // (b) Fallback: the selection's range (collapsed caret handled inside).
-            if (!ok) {
-                IUIAutomationTextRangeArray* ranges = nullptr;
-                if (SUCCEEDED(tp->GetSelection(&ranges)) && ranges) {
-                    int len = 0;
-                    ranges->get_Length(&len);
-                    IUIAutomationTextRange* rng = nullptr;
-                    if (len > 0 && SUCCEEDED(ranges->GetElement(0, &rng)) && rng) {
-                        if (uiaCaretFromRange(rng, out)) ok = true;
-                        rng->Release();
-                    }
-                    ranges->Release();
-                }
-            }
-        }
-        if (tp) tp->Release();
-        if (el) el->Release();
-        uia->Release();
+    // Acquire a focused element that exposes TextPattern. CEF/Chromium apps
+    // (DingTalk / Feishu docs) initially hand back only the outer Chromium widget
+    // with no text interface until their accessibility tree is built; nudge THAT
+    // window with WM_GETOBJECT and retry so the caret becomes readable. The startup
+    // focus handler usually has the tree ready already, so this seldom loops. Only
+    // browser widgets are worth waiting on — a plain non-text focus bails at once.
+    IUIAutomationElement* el = nullptr;
+    IUIAutomationTextPattern* tp = nullptr;
+    for (int attempt = 0; attempt < 4; ++attempt) {
+        if (el) { el->Release(); el = nullptr; }
+        if (FAILED(uia->GetFocusedElement(&el)) || !el) break;
+        if (SUCCEEDED(el->GetCurrentPatternAs(UIA_TextPatternId, __uuidof(IUIAutomationTextPattern),
+                                              reinterpret_cast<void**>(&tp))) && tp)
+            break;                                   // got a text element
+        UIA_HWND h = nullptr;
+        el->get_CurrentNativeWindowHandle(&h);
+        wchar_t cls[32] = {};
+        if (h) GetClassNameW(reinterpret_cast<HWND>(h), cls, 32);
+        if (wcsncmp(cls, L"Chrome_WidgetWin", 16) != 0) break;   // not a browser → don't wait
+        DWORD_PTR r = 0;
+        SendMessageTimeoutW(reinterpret_cast<HWND>(h), WM_GETOBJECT, 0, OBJID_CLIENT,
+                            SMTO_ABORTIFHUNG, 90, &r);
+        Sleep(25);
     }
-    if (balance) CoUninitialize();
+    if (el && tp) {
+        // (a) TextPattern2::GetCaretRange — the most direct, cleanest caret.
+        IUIAutomationTextPattern2* tp2 = nullptr;
+        if (SUCCEEDED(el->GetCurrentPatternAs(UIA_TextPattern2Id,
+                __uuidof(IUIAutomationTextPattern2), reinterpret_cast<void**>(&tp2))) && tp2) {
+            BOOL activeEnd = FALSE;
+            IUIAutomationTextRange* caretRange = nullptr;
+            if (SUCCEEDED(tp2->GetCaretRange(&activeEnd, &caretRange)) && caretRange) {
+                if (uiaCaretFromRange(caretRange, out)) ok = true;
+                caretRange->Release();
+            }
+            tp2->Release();
+        }
+        // (b) Fallback: the selection's range (collapsed caret handled inside).
+        if (!ok) {
+            IUIAutomationTextRangeArray* ranges = nullptr;
+            if (SUCCEEDED(tp->GetSelection(&ranges)) && ranges) {
+                int len = 0;
+                ranges->get_Length(&len);
+                IUIAutomationTextRange* rng = nullptr;
+                if (len > 0 && SUCCEEDED(ranges->GetElement(0, &rng)) && rng) {
+                    if (uiaCaretFromRange(rng, out)) ok = true;
+                    rng->Release();
+                }
+                ranges->Release();
+            }
+        }
+    }
+    if (tp) tp->Release();
+    if (el) el->Release();
     return ok;
 }
 
 // Lowest-priority fallback: the focused element's top-left (the caret sits at the
 // text start of an empty control). Only used when no method found a real caret.
 bool caretRectViaFocusedElement(RECT& out) {
-    const HRESULT ci = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    const bool balance = (ci == S_OK || ci == S_FALSE);
+    IUIAutomation* uia = g_uiaKeepAlive;   // reuse the startup instance
+    if (!uia) return false;
     bool ok = false;
-    IUIAutomation* uia = nullptr;
-    if (SUCCEEDED(CoCreateInstance(__uuidof(CUIAutomation), nullptr, CLSCTX_INPROC_SERVER,
-                                   __uuidof(IUIAutomation), reinterpret_cast<void**>(&uia))) && uia) {
-        IUIAutomationElement* el = nullptr;
-        if (SUCCEEDED(uia->GetFocusedElement(&el)) && el) {
-            RECT er{};
-            if (SUCCEEDED(el->get_CurrentBoundingRectangle(&er)) &&
-                er.right > er.left && er.bottom > er.top) {
-                // Only trust the element top-left when it is input-box-sized. A huge
-                // element is a container / embedded Chromium widget (CEF apps like
-                // DingTalk docs) whose corner is nowhere near the caret — in that
-                // case return false so the caller falls back to the mouse instead.
-                HWND fg = GetForegroundWindow();
-                RECT wr{};
-                const int elH = er.bottom - er.top;
-                const int wH = (fg && GetWindowRect(fg, &wr)) ? (wr.bottom - wr.top) : 100000;
-                if (elH <= 400 && elH < wH * 3 / 5) {
-                    out = RECT{ er.left, er.top, er.left + 2, er.top + 24 };
-                    ok = true;
-                }
+    IUIAutomationElement* el = nullptr;
+    if (SUCCEEDED(uia->GetFocusedElement(&el)) && el) {
+        RECT er{};
+        if (SUCCEEDED(el->get_CurrentBoundingRectangle(&er)) &&
+            er.right > er.left && er.bottom > er.top) {
+            // Only trust the element top-left when it is input-box-sized. A huge
+            // element is a container / embedded Chromium widget (CEF apps like
+            // DingTalk docs) whose corner is nowhere near the caret — in that
+            // case return false so the caller falls back to the mouse instead.
+            HWND fg = GetForegroundWindow();
+            RECT wr{};
+            const int elH = er.bottom - er.top;
+            const int wH = (fg && GetWindowRect(fg, &wr)) ? (wr.bottom - wr.top) : 100000;
+            if (elH <= 400 && elH < wH * 3 / 5) {
+                out = RECT{ er.left, er.top, er.left + 2, er.top + 24 };
+                ok = true;
             }
-            el->Release();
         }
-        uia->Release();
+        el->Release();
     }
-    if (balance) CoUninitialize();
     return ok;
 }
 
@@ -289,7 +281,6 @@ public:
     }
     HRESULT STDMETHODCALLTYPE HandleFocusChangedEvent(IUIAutomationElement*) override { return S_OK; }
 };
-IUIAutomation* g_uiaKeepAlive = nullptr;
 FocusHandler*  g_focusHandler = nullptr;
 
 } // namespace
@@ -322,15 +313,7 @@ bool queryCaret(CaretInfo& out) {
           (caretRectViaIME(rc)            && valid(rc)) ||   // IME composition/candidate point
           (caretRectViaFocusedElement(rc) && valid(rc))))    // rough element top-left fallback
         return false;
-    const POINT center{ (rc.left + rc.right) / 2, (rc.top + rc.bottom) / 2 };
     out.caret = QRect(QPoint(rc.left, rc.top), QPoint(rc.right, rc.bottom));
-    MONITORINFOEXW mi{};
-    mi.cbSize = sizeof(mi);
-    if (!GetMonitorInfoW(MonitorFromPoint(center, MONITOR_DEFAULTTONEAREST), &mi))
-        return false;
-    out.monitor = QRect(QPoint(mi.rcMonitor.left, mi.rcMonitor.top),
-                        QPoint(mi.rcMonitor.right, mi.rcMonitor.bottom));
-    out.device = QString::fromWCharArray(mi.szDevice);
     return true;
 }
 
