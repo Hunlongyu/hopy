@@ -87,6 +87,7 @@ const QHash<QByteArray, QString>& zh() {
         {"Check for updates", QStringLiteral("检查更新")},
         {"You're on the latest version.", QStringLiteral("已是最新版本。")},
         {"Checked too often — please try again later.", QStringLiteral("检查太频繁，请稍后再试。")},
+        {"Checked too often — please try again after %1.", QStringLiteral("检查太频繁，请在 %1 后重试。")},
         {"Update available",              QStringLiteral("发现新版本")},
         {"A new version %1 is available. Update now?",
                                           QStringLiteral("发现新版本 %1，现在更新吗？")},

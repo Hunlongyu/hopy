@@ -52,11 +52,16 @@ UpdateService::UpdateService(QWidget* dialogParent, QObject* parent)
                                               T("You're on the latest version."));
         busy_ = false;
     });
-    connect(checker_, &UpdateChecker::rateLimited, this, [this] {
-        // Transient: GitHub's unauthenticated 60/hour limit. Not a real failure,
-        // so don't offer the downloads page — just tell the user to retry later.
-        if (manual_) QMessageBox::information(parent_, T("Check for updates"),
-                                              T("Checked too often — please try again later."));
+    connect(checker_, &UpdateChecker::rateLimited, this, [this](qint64 resetEpochSecs) {
+        // Transient: GitHub's unauthenticated 60/hour limit. Not a real failure, so
+        // don't offer the downloads page — just tell the user when it clears.
+        if (manual_) {
+            QString msg = T("Checked too often — please try again later.");
+            if (resetEpochSecs > 0)
+                msg = T("Checked too often — please try again after %1.")
+                          .arg(QDateTime::fromSecsSinceEpoch(resetEpochSecs).toString(QStringLiteral("HH:mm")));
+            QMessageBox::information(parent_, T("Check for updates"), msg);
+        }
         busy_ = false;
     });
     connect(checker_, &UpdateChecker::failed, this, [this](const QString& why) {

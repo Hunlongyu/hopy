@@ -58,7 +58,7 @@ void UpdateChecker::check() {
             const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             if (isRateLimited(status, reply->rawHeader("X-RateLimit-Remaining"))) {
                 qWarning("update check: GitHub API rate limit reached");
-                emit rateLimited();
+                emit rateLimited(reply->rawHeader("X-RateLimit-Reset").toLongLong());
                 return;
             }
             qWarning("update check failed: %s", qPrintable(reply->errorString()));

@@ -26,7 +26,7 @@ public:
 signals:
     void upToDate();
     void updateAvailable(hopy::ReleaseInfo info);
-    void rateLimited();          // hit GitHub's API rate limit — transient, not a real failure
+    void rateLimited(qint64 resetEpochSecs);   // GitHub API rate limit — transient; resetEpochSecs = when it clears (0 if unknown)
     void failed(QString reason);
 
 private:
