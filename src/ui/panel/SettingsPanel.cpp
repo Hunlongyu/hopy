@@ -20,6 +20,7 @@
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QSlider>
+#include <QStyle>
 
 namespace hopy {
 
@@ -176,13 +177,14 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     auto* aboutRow = new QWidget();
     auto* arl = new QHBoxLayout(aboutRow);
     arl->setContentsMargins(0, 0, 0, 0);
-    auto* checkBtn = new QPushButton(T("Check for updates"));
-    checkBtn->setCursor(Qt::PointingHandCursor);
-    connect(checkBtn, &QPushButton::clicked, this, &SettingsPanel::checkUpdateRequested);
+    checkBtn_ = new QPushButton(T("Check for updates"));
+    checkBtn_->setObjectName("CheckUpdateBtn");
+    checkBtn_->setCursor(Qt::PointingHandCursor);
+    connect(checkBtn_, &QPushButton::clicked, this, &SettingsPanel::checkUpdateRequested);
     auto* gh = new IconButton(QStringLiteral("github"), QStringLiteral("GitHub"), false);
     connect(gh, &QToolButton::clicked, this,
             [] { QDesktopServices::openUrl(QUrl(update::releasesPageUrl())); });
-    arl->addWidget(checkBtn);
+    arl->addWidget(checkBtn_);
     arl->addStretch(1);
     arl->addWidget(gh);
     ab->addWidget(aboutRow);
@@ -224,6 +226,15 @@ void SettingsPanel::setSettings(const AppSettings& s) {
     maxHistory_->setValue(s.maxHistory);
     maxStorage_->setValue(s.maxStorage);
     loading_ = false;
+}
+
+void SettingsPanel::setUpdateAvailable(const QString& tag) {
+    if (!checkBtn_) return;
+    const bool has = !tag.isEmpty();
+    checkBtn_->setText(has ? T("New version %1").arg(tag) : T("Check for updates"));
+    checkBtn_->setProperty("hasUpdate", has);
+    checkBtn_->style()->unpolish(checkBtn_);   // re-evaluate the [hasUpdate] style
+    checkBtn_->style()->polish(checkBtn_);
 }
 
 void SettingsPanel::emitChange() {

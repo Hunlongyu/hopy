@@ -2,6 +2,7 @@
 #include <QWidget>
 #include <QKeyEvent>
 #include <QCoreApplication>
+#include <QApplication>
 
 #if defined(Q_OS_WIN)
 #include <windows.h>
@@ -58,6 +59,12 @@ QString charForKey(DWORD vk, DWORD scan) {
 
 LRESULT CALLBACK kbProc(int code, WPARAM wp, LPARAM lp) {
     if (code != HC_ACTION || !g_target)
+        return CallNextHookEx(nullptr, code, wp, lp);
+
+    // A modal dialog or popup of ours (the update dialog, a settings combobox list)
+    // owns the keyboard while it's up. Don't swallow keys into the list behind it —
+    // let them flow to the focused widget normally. (Runs on the GUI thread.)
+    if (QApplication::activeModalWidget() || QApplication::activePopupWidget())
         return CallNextHookEx(nullptr, code, wp, lp);
 
     const auto* k  = reinterpret_cast<KBDLLHOOKSTRUCT*>(lp);

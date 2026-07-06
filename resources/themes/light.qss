@@ -55,6 +55,27 @@ QPushButton:hover { background: #e8e8e8; }
 QCheckBox::indicator { width: 16px; height: 16px; border: 1px solid #c8c8c8; border-radius: 4px; background: #ffffff; }
 QCheckBox::indicator:checked { background: #5b7bd5; border: 1px solid #5b7bd5; }
 
+/* ── Update dialog ────────────────────────────────────── */
+#UpdateRoot { background: #ffffff; border-radius: 12px; }
+#UpdateHeaderTitle { font-size: 15px; font-weight: 600; color: #303136; }
+#UpdateClose { font-size: 16px; color: #6b6b6b; padding: 2px 6px; }
+#UpdateClose:hover { color: #1a1a1a; }
+#UpdateDivider { background: rgba(0, 0, 0, 0.07); }
+#UpdateHeadline { font-size: 20px; font-weight: 600; color: #303136; }
+#UpdateSub { color: #6b6b6b; font-size: 13px; }
+#UpdateNotes { background: #f5f5f5; border: 1px solid #e6e6e6; border-radius: 10px; color: #40444a; padding: 4px 6px; }
+#UpdateOk { color: #1a7f37; font-size: 13px; }
+#UpdateErr { color: #cf222e; font-size: 13px; }
+#UpdatePrimary { background: #5b7bd5; color: #ffffff; border: none; border-radius: 6px; padding: 6px 16px; }
+#UpdatePrimary:hover { background: #6d8adf; }
+#UpdateLink { background: transparent; border: none; color: #5b7bd5; padding: 6px 4px; }
+#UpdateLink:hover { color: #4a6ac4; }
+#UpdateProgress { background: #e0e0e0; border: none; border-radius: 4px; }
+#UpdateProgress::chunk { background: #5b7bd5; border-radius: 4px; }
+#UpdateDot { background: #e5534b; border-radius: 4px; border: 1px solid #ffffff; }
+#CheckUpdateBtn[hasUpdate="true"] { background: #5b7bd5; color: #ffffff; border: none; }
+#CheckUpdateBtn[hasUpdate="true"]:hover { background: #6d8adf; }
+
 /* Hide all scrollbars (content still scrolls with the wheel) */
 QScrollBar:vertical, QScrollBar:horizontal { width: 0px; height: 0px; background: transparent; }
 QScrollBar::handle, QScrollBar::add-line, QScrollBar::sub-line,

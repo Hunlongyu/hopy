@@ -34,12 +34,16 @@ void UpdateDownloader::download(const ReleaseInfo& info) {
         emit failed(QStringLiteral("release is missing the exe or checksum asset"));
         return;
     }
+    canceled_ = false;
     // Step 1: fetch checksum file (small).
     QNetworkRequest sumReq{QUrl(info.checksumAsset.url)};
     sumReq.setRawHeader("User-Agent", "hopy-updater");
     QNetworkReply* sumReply = nam_->get(sumReq);
+    active_ = sumReply;
     connect(sumReply, &QNetworkReply::finished, this, [this, sumReply, info] {
         sumReply->deleteLater();
+        active_ = nullptr;
+        if (canceled_) return;
         if (sumReply->error() != QNetworkReply::NoError) {
             emit failed(sumReply->errorString());
             return;
@@ -53,9 +57,12 @@ void UpdateDownloader::download(const ReleaseInfo& info) {
         QNetworkRequest exeReq{QUrl(info.exeAsset.url)};
         exeReq.setRawHeader("User-Agent", "hopy-updater");
         QNetworkReply* exeReply = nam_->get(exeReq);
+        active_ = exeReply;
         connect(exeReply, &QNetworkReply::downloadProgress, this, &UpdateDownloader::progress);
         connect(exeReply, &QNetworkReply::finished, this, [this, exeReply, expected, info] {
             exeReply->deleteLater();
+            active_ = nullptr;
+            if (canceled_) return;
             if (exeReply->error() != QNetworkReply::NoError) {
                 emit failed(exeReply->errorString());
                 return;
@@ -80,6 +87,11 @@ void UpdateDownloader::download(const ReleaseInfo& info) {
             emit ready(path);
         });
     });
+}
+
+void UpdateDownloader::cancel() {
+    canceled_ = true;
+    if (active_) active_->abort();   // finished() fires with OperationCanceledError, swallowed above
 }
 
 } // namespace hopy

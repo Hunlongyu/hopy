@@ -52,6 +52,11 @@ void Application::start() {
     paste_ = new PasteService(this);
     monitor_ = new ClipboardMonitor(this);
     tray_ = new TrayIcon(this);
+    connect(updater_, &UpdateService::updateBadge, this, [this](bool pending, const QString& tag) {
+        tray_->setUpdateBadge(pending);
+        window_->setUpdateBadge(pending, tag);
+    });
+    updater_->primeBadge();   // show the badge immediately if a pending update was cached
     hotkey_ = new GlobalHotkey(this);
 
     connect(monitor_, &ClipboardMonitor::payloadCaptured, this, &Application::onPayloadCaptured);

@@ -32,6 +32,7 @@ public:
     void setSettings(const AppSettings& s);
     void showAtCursor();
     void retranslate();   // rebuild the translated UI after a language change
+    void setUpdateBadge(bool on, const QString& tag = QString());   // dot on the gear + reflect on the check button
 
 signals:
     void confirmRequested(qint64 id, bool plainText);
@@ -87,6 +88,8 @@ private:
     Qt::MouseButton openMouseButton_ = Qt::RightButton;  // Qt::NoButton = mouse open disabled
     QToolButton* helpBtn_ = nullptr;
     QToolButton* setBtn_ = nullptr;
+    QLabel* updateDot_ = nullptr;   // red dot over setBtn_ when an update is pending
+    QString pendingUpdateTag_;      // cached so panel rebuilds (language switch) keep the state
     QToolButton* aaBtn_ = nullptr;   // search: case-sensitive toggle
     QToolButton* wwBtn_ = nullptr;   // search: whole-word toggle
     QToolButton* btnText_ = nullptr;

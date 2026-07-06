@@ -6,6 +6,7 @@ class QComboBox;
 class QCheckBox;
 class QSpinBox;
 class QSlider;
+class QPushButton;
 
 namespace hopy {
 
@@ -16,6 +17,7 @@ class SettingsPanel : public QWidget {
 public:
     explicit SettingsPanel(QWidget* parent = nullptr);
     void setSettings(const AppSettings& s);
+    void setUpdateAvailable(const QString& tag);   // reflect a pending update on the check button
 
 signals:
     void backRequested();
@@ -42,6 +44,7 @@ private:
     QSpinBox* maxHistory_ = nullptr;
     QSpinBox* maxStorage_ = nullptr;
     QSlider* opacity_ = nullptr;
+    QPushButton* checkBtn_ = nullptr;
 };
 
 } // namespace hopy

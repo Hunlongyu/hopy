@@ -209,6 +209,7 @@ void MainWindow::buildPanels() {
     connect(settingsPanel_, &SettingsPanel::settingsChanged, this, &MainWindow::settingsChanged);
     connect(settingsPanel_, &SettingsPanel::checkUpdateRequested, this, &MainWindow::updateRequested);
     connect(settingsPanel_, &SettingsPanel::clearAllRequested, this, &MainWindow::clearAllRequested);
+    settingsPanel_->setUpdateAvailable(pendingUpdateTag_);   // keep the label across panel rebuilds
 }
 
 void MainWindow::retranslateTips() {
@@ -233,6 +234,24 @@ void MainWindow::retranslate() {
     buildPanels();
     retranslateTips();
     showSettings();
+}
+
+void MainWindow::setUpdateBadge(bool on, const QString& tag) {
+    pendingUpdateTag_ = on ? tag : QString();
+    if (!updateDot_) {
+        updateDot_ = new QLabel(setBtn_);
+        updateDot_->setObjectName("UpdateDot");
+        updateDot_->setFixedSize(8, 8);
+        updateDot_->setAttribute(Qt::WA_TransparentForMouseEvents);
+    }
+    if (on) {
+        updateDot_->move(setBtn_->width() - updateDot_->width() - 2, 2);
+        updateDot_->raise();
+        updateDot_->show();
+    } else {
+        updateDot_->hide();
+    }
+    if (settingsPanel_) settingsPanel_->setUpdateAvailable(pendingUpdateTag_);
 }
 
 QWidget* MainWindow::buildHeader() {
@@ -369,6 +388,8 @@ void MainWindow::showAtCursor() {
     showTimer_.restart();
     platform::setNoActivate(winId());    // hard guarantee: this window never takes focus
     show(); raise();                     // shown WITHOUT activating (WA_ShowWithoutActivating)
+    if (updateDot_ && updateDot_->isVisible())   // re-glue the badge now geometry is real
+        updateDot_->move(setBtn_->width() - updateDot_->width() - 2, 2);
     inputHook_->start(this);             // route keyboard here while visible
 }
 

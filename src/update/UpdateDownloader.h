@@ -5,6 +5,7 @@
 #include <QString>
 
 class QNetworkAccessManager;
+class QNetworkReply;
 
 namespace hopy {
 
@@ -19,6 +20,7 @@ class UpdateDownloader : public QObject {
 public:
     explicit UpdateDownloader(QNetworkAccessManager* nam, QObject* parent = nullptr);
     void download(const ReleaseInfo& info);
+    void cancel();   // abort an in-flight download; emits nothing (the caller drove the cancel)
 
 signals:
     void progress(qint64 received, qint64 total);
@@ -27,6 +29,8 @@ signals:
 
 private:
     QNetworkAccessManager* nam_;
+    QNetworkReply* active_ = nullptr;   // current in-flight reply, so cancel() can abort it
+    bool canceled_ = false;             // set by cancel() to swallow the resulting finished()
 };
 
 } // namespace hopy

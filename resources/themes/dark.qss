@@ -56,6 +56,27 @@ QKeySequenceEdit QLineEdit { background: #3c3c3c; }
 #RowDivider { background: rgba(255, 255, 255, 0.06); border: none; }
 #KeyCap { background: rgba(255, 255, 255, 0.10); border-radius: 6px; padding: 5px 14px; min-width: 64px; color: #f0f0f0; }
 
+/* ── Update dialog ────────────────────────────────────── */
+#UpdateRoot { background: #2d2d2d; border-radius: 12px; }
+#UpdateHeaderTitle { font-size: 15px; font-weight: 600; color: #f0f0f0; }
+#UpdateClose { font-size: 16px; color: #888888; padding: 2px 6px; }
+#UpdateClose:hover { color: #f0f0f0; }
+#UpdateDivider { background: rgba(255, 255, 255, 0.07); }
+#UpdateHeadline { font-size: 20px; font-weight: 600; color: #f0f0f0; }
+#UpdateSub { color: #8a8a8a; font-size: 13px; }
+#UpdateNotes { background: #363636; border: 1px solid #4d4d4d; border-radius: 10px; color: #d2d2d2; padding: 4px 6px; }
+#UpdateOk { color: #3fb950; font-size: 13px; }
+#UpdateErr { color: #e5534b; font-size: 13px; }
+#UpdatePrimary { background: #6b8cff; color: #ffffff; border: none; border-radius: 6px; padding: 6px 16px; }
+#UpdatePrimary:hover { background: #809dff; }
+#UpdateLink { background: transparent; border: none; color: #6b8cff; padding: 6px 4px; }
+#UpdateLink:hover { color: #93abff; }
+#UpdateProgress { background: #4d4d4d; border: none; border-radius: 4px; }
+#UpdateProgress::chunk { background: #6b8cff; border-radius: 4px; }
+#UpdateDot { background: #e5534b; border-radius: 4px; border: 1px solid #2d2d2d; }
+#CheckUpdateBtn[hasUpdate="true"] { background: #6b8cff; color: #ffffff; border: none; }
+#CheckUpdateBtn[hasUpdate="true"]:hover { background: #809dff; }
+
 /* Hide all scrollbars (content still scrolls with the wheel) */
 QScrollBar:vertical, QScrollBar:horizontal { width: 0px; height: 0px; background: transparent; }
 QScrollBar::handle, QScrollBar::add-line, QScrollBar::sub-line,
