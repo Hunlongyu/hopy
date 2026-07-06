@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(hopy VERSION 0.2.0 LANGUAGES CXX)
+project(hopy VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -65,7 +65,14 @@ endif()
 
 set(HOPY_APP_SOURCES src/main.cpp resources/hopy.qrc)
 if(WIN32)
-  list(APPEND HOPY_APP_SOURCES resources/hopy.rc)   # embeds logo.ico as the exe icon
+  # Win32 resource: app icon + VERSIONINFO. Templated so the version tracks
+  # project(VERSION ...); the icon is referenced by absolute path since the
+  # generated .rc lives in the build tree, not next to logo.ico.
+  set(HOPY_RC_ICON "${CMAKE_CURRENT_SOURCE_DIR}/resources/logo.ico")
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/resources/hopy.rc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/hopy.rc @ONLY)
+  list(APPEND HOPY_APP_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/generated/hopy.rc)
 endif()
 qt_add_executable(hopy WIN32 ${HOPY_APP_SOURCES})   # WIN32: GUI subsystem, no console
 target_link_libraries(hopy PRIVATE hopy_lib)
