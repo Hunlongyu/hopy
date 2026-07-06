@@ -11,5 +11,6 @@ bool isForegroundWindow(WindowHandle h);   // true once h is actually the foregr
 bool isOwnWindow(WindowHandle h);          // true if h belongs to our own process (don't target it)
 void setNoActivate(quintptr windowHandle); // force a window to never take focus (WS_EX_NOACTIVATE)
 void sendPasteShortcut(bool plainText);
+void suppressAltMenu();                    // defeat the foreground app's Alt-menu when an Alt-based hotkey fires
 
 } // namespace hopy::platform

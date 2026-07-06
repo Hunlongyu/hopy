@@ -65,6 +65,20 @@ void sendPasteShortcut(bool plainText) {
     SendInput(n, in, sizeof(INPUT));
 }
 
+void suppressAltMenu() {
+    // A MOD_ALT global hotkey (e.g. Alt+C) has its non-modifier key eaten by
+    // RegisterHotKey, so the foreground app only sees a "lone" Alt press+release —
+    // which Windows treats as the menu-access key. Chromium then focuses its toolbar
+    // (the ⋮ button) and the focused web <input> loses its caret, so a later paste
+    // has no target. Injecting a stray Ctrl tap while Alt is still held makes the
+    // pending Alt-up no longer lone, so no menu opens.
+    if (!(GetAsyncKeyState(VK_MENU) & 0x8000)) return;   // Alt not held → nothing to defeat
+    INPUT in[2] = {};
+    in[0].type = INPUT_KEYBOARD; in[0].ki.wVk = VK_CONTROL;
+    in[1].type = INPUT_KEYBOARD; in[1].ki.wVk = VK_CONTROL; in[1].ki.dwFlags = KEYEVENTF_KEYUP;
+    SendInput(2, in, sizeof(INPUT));
+}
+
 } // namespace hopy::platform
 
 #elif defined(Q_OS_MAC)
@@ -89,6 +103,7 @@ void sendPasteShortcut(bool plainText) {
     if (up) CFRelease(up);
     if (src) CFRelease(src);
 }
+void suppressAltMenu() {}
 } // namespace hopy::platform
 
 #else // Linux / X11
@@ -130,5 +145,6 @@ void sendPasteShortcut(bool plainText) {
     XFlush(d);
     XCloseDisplay(d);
 }
+void suppressAltMenu() {}
 } // namespace hopy::platform
 #endif

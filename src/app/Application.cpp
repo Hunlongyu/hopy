@@ -11,6 +11,7 @@
 #include "hotkey/GlobalHotkey.h"
 #include "platform/CaretProbe.h"
 #include "platform/Autostart.h"
+#include "platform/ForegroundWindow.h"
 #include "platform/UpdateInstaller.h"
 #include "util/Paths.h"
 #include "util/Hash.h"
@@ -186,6 +187,10 @@ void Application::showWindow() {
 }
 
 void Application::toggleWindow() {
+    // The hotkey is Alt-based by default; that Alt would otherwise open the target
+    // app's menu bar on release (Chromium then steals focus to its toolbar and the
+    // web input loses its caret). Defeat it before doing anything else.
+    platform::suppressAltMenu();
     if (window_->isVisible()) window_->hide();   // hotkey again dismisses
     else showWindow();
 }
