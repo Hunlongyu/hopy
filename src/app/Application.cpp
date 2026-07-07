@@ -202,12 +202,15 @@ void Application::showWindow() {
 }
 
 void Application::toggleWindow() {
+    if (window_->isVisible()) { window_->hide(); return; }   // hotkey again dismisses
+    // Don't pop up over a fullscreen app (e.g. a game). Checked before suppressAltMenu
+    // so we don't inject a stray Ctrl tap into the game when we're going to bail.
+    if (settings_.suppressOnFullscreen && platform::isForegroundFullscreen()) return;
     // The hotkey is Alt-based by default; that Alt would otherwise open the target
     // app's menu bar on release (Chromium then steals focus to its toolbar and the
-    // web input loses its caret). Defeat it before doing anything else.
+    // web input loses its caret). Defeat it before showing.
     platform::suppressAltMenu();
-    if (window_->isVisible()) window_->hide();   // hotkey again dismisses
-    else showWindow();
+    showWindow();
 }
 
 } // namespace hopy

@@ -12,5 +12,6 @@ bool isOwnWindow(WindowHandle h);          // true if h belongs to our own proce
 void setNoActivate(quintptr windowHandle); // force a window to never take focus (WS_EX_NOACTIVATE)
 void sendPasteShortcut(bool plainText);
 void suppressAltMenu();                    // defeat the foreground app's Alt-menu when an Alt-based hotkey fires
+bool isForegroundFullscreen();             // true if a fullscreen app (game/video) covers the whole screen
 
 } // namespace hopy::platform

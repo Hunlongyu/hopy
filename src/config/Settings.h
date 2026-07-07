@@ -14,6 +14,7 @@ struct AppSettings {
     int maxStorage = 200;
     ConfirmMode confirmMode = ConfirmMode::PasteImmediately;
     bool autostart = false;
+    bool suppressOnFullscreen = true;   // ignore the global hotkey while a fullscreen app is active
     bool hoverPreview = true;
     bool spacePreview = true;
     QString previewSide = "left"; // "left" | "right"

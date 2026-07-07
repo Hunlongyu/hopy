@@ -79,6 +79,40 @@ void suppressAltMenu() {
     SendInput(2, in, sizeof(INPUT));
 }
 
+bool isForegroundFullscreen() {
+    HWND fg = GetForegroundWindow();
+    if (!fg) return false;
+    if (fg == GetShellWindow() || fg == GetDesktopWindow()) return false;   // the desktop isn't "fullscreen"
+    if (isOwnWindow(reinterpret_cast<WindowHandle>(fg))) return false;      // never suppress over ourselves
+    wchar_t cls[64] = {};
+    GetClassNameW(fg, cls, 63);
+    if (wcscmp(cls, L"WorkerW") == 0 || wcscmp(cls, L"Progman") == 0) return false;   // wallpaper hosts
+    // Distinguish a truly-fullscreen window from a merely *maximised* one — the
+    // exact check Chromium uses (chrome/browser/fullscreen_win.cc). Geometry alone
+    // can't: a maximised window's resize frame overhangs the monitor, and on a
+    // taskbar-less monitor the work area IS the whole monitor, and Chromium/Electron
+    // apps keep the zoomed state even in F11 fullscreen — so rect / IsZoomed /
+    // WS_CAPTION all fail to separate the two. The deciding signal is the frame:
+    // a maximised, resizable window keeps WS_THICKFRAME / WS_DLGFRAME (+ the
+    // WS_EX_WINDOWEDGE bit); a real fullscreen window is borderless without them.
+    RECT wr;
+    if (!GetWindowRect(fg, &wr)) return false;
+    HMONITOR mon = MonitorFromRect(&wr, MONITOR_DEFAULTTONULL);
+    if (!mon) return false;                       // window sits on no monitor
+    MONITORINFO mi{ sizeof(mi) };
+    if (!GetMonitorInfoW(mon, &mi)) return false;
+    // Window must cover the ENTIRE monitor: intersect with the monitor and require
+    // the overlap to be the whole monitor (an overhanging maximised window still
+    // passes here — the frame-style test below is what rejects it).
+    RECT overlap;
+    if (!IntersectRect(&overlap, &wr, &mi.rcMonitor) || !EqualRect(&overlap, &mi.rcMonitor))
+        return false;
+    const LONG style   = GetWindowLongW(fg, GWL_STYLE);
+    const LONG exStyle = GetWindowLongW(fg, GWL_EXSTYLE);
+    return !((style & (WS_DLGFRAME | WS_THICKFRAME)) ||
+             (exStyle & (WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW)));
+}
+
 } // namespace hopy::platform
 
 #elif defined(Q_OS_MAC)
@@ -104,6 +138,7 @@ void sendPasteShortcut(bool plainText) {
     if (src) CFRelease(src);
 }
 void suppressAltMenu() {}
+bool isForegroundFullscreen() { return false; }
 } // namespace hopy::platform
 
 #else // Linux / X11
@@ -146,5 +181,6 @@ void sendPasteShortcut(bool plainText) {
     XCloseDisplay(d);
 }
 void suppressAltMenu() {}
+bool isForegroundFullscreen() { return false; }
 } // namespace hopy::platform
 #endif

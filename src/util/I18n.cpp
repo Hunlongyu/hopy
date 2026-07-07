@@ -77,6 +77,7 @@ const QHash<QByteArray, QString>& zh() {
         {"Open with mouse",  QStringLiteral("鼠标打开键")},
         {"Open with key",    QStringLiteral("键盘打开键")},
         {"Start on boot",   QStringLiteral("开机自启")},
+        {"Suppress hotkey in fullscreen", QStringLiteral("全屏时屏蔽快捷键")},
         {"Storage",         QStringLiteral("存储")},
         {"Items shown",     QStringLiteral("显示条数")},
         {"Storage limit",   QStringLiteral("存储上限")},

@@ -19,6 +19,7 @@ AppSettings Settings::fromJson(const QByteArray& json) {
         s.confirmMode = o["confirmMode"].toString() == "copy" ? ConfirmMode::CopyOnly
                                                               : ConfirmMode::PasteImmediately;
     if (o.contains("autostart"))    s.autostart = o["autostart"].toBool(s.autostart);
+    if (o.contains("suppressOnFullscreen")) s.suppressOnFullscreen = o["suppressOnFullscreen"].toBool(s.suppressOnFullscreen);
     if (o.contains("hoverPreview")) s.hoverPreview = o["hoverPreview"].toBool(s.hoverPreview);
     if (o.contains("spacePreview")) s.spacePreview = o["spacePreview"].toBool(s.spacePreview);
     if (o.contains("previewSide"))  s.previewSide = o["previewSide"].toString(s.previewSide);
@@ -49,6 +50,7 @@ QByteArray Settings::toJson(const AppSettings& s) {
     o["maxStorage"] = s.maxStorage;
     o["confirmMode"] = s.confirmMode == ConfirmMode::CopyOnly ? "copy" : "paste";
     o["autostart"] = s.autostart;
+    o["suppressOnFullscreen"] = s.suppressOnFullscreen;
     o["hoverPreview"] = s.hoverPreview;
     o["spacePreview"] = s.spacePreview;
     o["previewSide"] = s.previewSide;
