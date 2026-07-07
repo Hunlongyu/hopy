@@ -76,6 +76,13 @@ QCheckBox::indicator:checked { background: #5b7bd5; border: 1px solid #5b7bd5; }
 #CheckUpdateBtn[hasUpdate="true"] { background: #5b7bd5; color: #ffffff; border: none; }
 #CheckUpdateBtn[hasUpdate="true"]:hover { background: #6d8adf; }
 
+/* Tray context menu */
+QMenu#TrayMenu { background: #ffffff; border: 1px solid #e2e2e2; border-radius: 10px; padding: 6px; }
+QMenu#TrayMenu::item { padding: 4px 24px 4px 8px; border-radius: 7px; color: #1a1a1a; }
+QMenu#TrayMenu::item:selected { background: #e8edf8; color: #1a1a1a; }
+QMenu#TrayMenu::item:disabled { color: #b0b0b0; }
+QMenu#TrayMenu::separator { height: 1px; background: #ededed; margin: 5px 12px; }
+
 /* Hide all scrollbars (content still scrolls with the wheel) */
 QScrollBar:vertical, QScrollBar:horizontal { width: 0px; height: 0px; background: transparent; }
 QScrollBar::handle, QScrollBar::add-line, QScrollBar::sub-line,

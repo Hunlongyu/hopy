@@ -131,6 +131,9 @@ const QHash<QByteArray, QString>& zh() {
         {"MIT License",     QStringLiteral("MIT 开源协议")},
         // Tray + dialogs
         {"Show",            QStringLiteral("显示")},
+        {"Show main window", QStringLiteral("显示主界面")},
+        {"Pause monitoring", QStringLiteral("暂停监听")},
+        {"Launch at startup", QStringLiteral("开机自启")},
         {"Quit",            QStringLiteral("退出")},
         {"Yes",             QStringLiteral("是")},
         {"No",              QStringLiteral("否")},

@@ -26,6 +26,7 @@ void ClipboardMonitor::start() {
 }
 
 void ClipboardMonitor::onClipboardChanged() {
+    if (paused_) return;   // monitoring paused from the tray menu
     const QMimeData* m = QGuiApplication::clipboard()->mimeData();
     if (!m) return;
 

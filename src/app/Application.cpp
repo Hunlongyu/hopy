@@ -57,6 +57,16 @@ void Application::start() {
         window_->setUpdateBadge(pending, tag);
     });
     updater_->primeBadge();   // show the badge immediately if a pending update was cached
+    connect(tray_, &TrayIcon::checkUpdateRequested, updater_, &UpdateService::checkManually);
+    connect(tray_, &TrayIcon::pauseToggled, monitor_, &ClipboardMonitor::setPaused);
+    connect(tray_, &TrayIcon::autostartToggled, this, [this](bool on) {
+        if (on == settings_.autostart) return;
+        platform::setAutostart(on);
+        settings_.autostart = on;
+        Settings::save(settings_);
+        window_->setSettings(settings_);   // keep the Settings-panel toggle in sync
+    });
+    tray_->setAutostart(settings_.autostart);
     hotkey_ = new GlobalHotkey(this);
 
     connect(monitor_, &ClipboardMonitor::payloadCaptured, this, &Application::onPayloadCaptured);
@@ -93,7 +103,7 @@ void Application::start() {
     connect(window_, &MainWindow::settingsChanged, this, [this](const AppSettings& in) {
         AppSettings s = in;
         const bool langChanged = (s.language != settings_.language);
-        if (s.theme != settings_.theme) applyTheme(s.theme);
+        if (s.theme != settings_.theme) { applyTheme(s.theme); tray_->applyTheme(); }
         if (s.hotkey != settings_.hotkey) {
             if (!hotkey_->setShortcut(s.hotkey)) {
                 // Combo is taken by another program — keep the working one and
@@ -105,7 +115,7 @@ void Application::start() {
                 window_->setSettings(s);   // reflect the revert in the panel
             }
         }
-        if (s.autostart != settings_.autostart) platform::setAutostart(s.autostart);
+        if (s.autostart != settings_.autostart) { platform::setAutostart(s.autostart); tray_->setAutostart(s.autostart); }
         window_->setWindowOpacity(s.windowOpacity / 100.0);
         window_->setSettings(s);   // apply preview side / hover / space toggles live
         settings_ = s;

@@ -77,6 +77,13 @@ QKeySequenceEdit QLineEdit { background: #3c3c3c; }
 #CheckUpdateBtn[hasUpdate="true"] { background: #6b8cff; color: #ffffff; border: none; }
 #CheckUpdateBtn[hasUpdate="true"]:hover { background: #809dff; }
 
+/* Tray context menu */
+QMenu#TrayMenu { background: #2d2d2d; border: 1px solid #454545; border-radius: 10px; padding: 6px; }
+QMenu#TrayMenu::item { padding: 4px 24px 4px 8px; border-radius: 7px; color: #e6e6e6; }
+QMenu#TrayMenu::item:selected { background: #3a4055; color: #ffffff; }
+QMenu#TrayMenu::item:disabled { color: #6a6a6a; }
+QMenu#TrayMenu::separator { height: 1px; background: #454545; margin: 5px 12px; }
+
 /* Hide all scrollbars (content still scrolls with the wheel) */
 QScrollBar:vertical, QScrollBar:horizontal { width: 0px; height: 0px; background: transparent; }
 QScrollBar::handle, QScrollBar::add-line, QScrollBar::sub-line,

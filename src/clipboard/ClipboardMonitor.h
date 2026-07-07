@@ -27,6 +27,7 @@ public:
     void start();
     // Called when we write to the clipboard ourselves, so the echo isn't re-saved.
     void setSelfCopyText(const QString& text) { lastText_ = text; }
+    void setPaused(bool p) { paused_ = p; }   // when paused, clipboard changes are ignored
 
 signals:
     void payloadCaptured(const CapturedPayload& payload);
@@ -38,6 +39,7 @@ private:
     QString lastText_;
     quint64 lastImageHash_ = 0;
     quint64 lastFilesHash_ = 0;
+    bool paused_ = false;
 };
 
 } // namespace hopy
