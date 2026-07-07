@@ -15,6 +15,7 @@ struct AppSettings {
     ConfirmMode confirmMode = ConfirmMode::PasteImmediately;
     bool autostart = false;
     bool suppressOnFullscreen = true;   // ignore the global hotkey while a fullscreen app is active
+    bool maskSensitive = true;          // mask OS-flagged secrets (passwords) in the UI
     bool hoverPreview = true;
     bool spacePreview = true;
     QString previewSide = "left"; // "left" | "right"

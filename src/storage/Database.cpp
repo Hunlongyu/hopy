@@ -56,8 +56,13 @@ bool Database::migrate() {
         " favorite INTEGER NOT NULL DEFAULT 0,"
         " html_path TEXT,"
         " rtf_path TEXT,"
-        " image_path TEXT)");
+        " image_path TEXT,"
+        " sensitive INTEGER NOT NULL DEFAULT 0)");
     if (!ok) { qWarning("hopy: create records failed: %s", qPrintable(q.lastError().text())); return false; }
+
+    // Non-destructively add post-v1 columns to a pre-existing table (ALTER errors
+    // harmlessly if the column is already there), so upgrades keep the history.
+    q.exec("ALTER TABLE records ADD COLUMN sensitive INTEGER NOT NULL DEFAULT 0");
 
     q.exec("CREATE INDEX IF NOT EXISTS idx_created ON records(created_at)");
 

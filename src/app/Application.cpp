@@ -160,7 +160,7 @@ void Application::start() {
 void Application::onPayloadCaptured(const CapturedPayload& p) {
     switch (p.kind) {
         case PayloadKind::Text:
-            repo_->saveText(p.text);
+            repo_->saveText(p.text, p.sensitive);
             break;
         case PayloadKind::RichText: {
             const auto id = static_cast<qint64>(Hash::contentHash(ContentType::RichText, p.text.toUtf8()));
@@ -168,7 +168,7 @@ void Application::onPayloadCaptured(const CapturedPayload& p) {
                                      QString::number(static_cast<quint64>(id)) + ".html";
             QFile f(htmlPath);
             if (f.open(QIODevice::WriteOnly)) f.write(p.html.toUtf8());
-            repo_->saveRichText(p.text, htmlPath, {});
+            repo_->saveRichText(p.text, htmlPath, {}, p.sensitive);
             break;
         }
         case PayloadKind::Image: {

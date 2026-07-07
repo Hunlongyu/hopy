@@ -16,6 +16,13 @@ void RecordListModel::setFilter(ContentFilter filter, const QString& search) {
     endResetModel();
 }
 
+void RecordListModel::setMaskSensitive(bool on) {
+    if (maskSensitive_ == on) return;
+    maskSensitive_ = on;
+    if (!visible_.isEmpty())
+        emit dataChanged(index(0), index(visible_.size() - 1), {Qt::DisplayRole, RawRole});
+}
+
 void RecordListModel::recompute() {
     visible_.clear();
     for (int i = 0; i < all_.size(); ++i) {
@@ -38,7 +45,7 @@ QVariant RecordListModel::data(const QModelIndex& index, int role) const {
     if (!r) return {};
     switch (role) {
         case Qt::DisplayRole: {
-            QString s = r->content;
+            QString s = (maskSensitive_ && r->sensitive) ? maskSecret(r->content) : r->content;
             s.replace('\n', ' ');
             return s.left(300);
         }
@@ -48,7 +55,7 @@ QVariant RecordListModel::data(const QModelIndex& index, int role) const {
         case CreatedAtRole: return r->createdAt;
         case ImagePathRole: return r->imagePath;
         case IdRole:        return r->id;
-        case RawRole:       return r->content;
+        case RawRole:       return (maskSensitive_ && r->sensitive) ? maskSecret(r->content) : r->content;
         default: return {};
     }
 }

@@ -92,6 +92,12 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
         return br.height() + 4;
     };
 
+    // A password-manager-flagged secret is masked in the preview too (Text only);
+    // counts and the open hint are suppressed so nothing about it leaks.
+    const bool masked = maskSensitive_ && rec.sensitive &&
+                        (rec.type == ContentType::Text || rec.type == ContentType::RichText);
+    const QString body = masked ? maskSecret(rec.content) : rec.content;
+
     // Top info bar: type · counts · absolute time · open hint.
     const QString typeLabel =
         rec.type == ContentType::Image ? T("Image")
@@ -100,7 +106,7 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
     const QString absTime =
         QDateTime::fromMSecsSinceEpoch(rec.createdAt).toString("yyyy-MM-dd HH:mm:ss");
     QStringList parts{typeLabel};
-    if (rec.type == ContentType::Text || rec.type == ContentType::RichText)
+    if (!masked && (rec.type == ContentType::Text || rec.type == ContentType::RichText))
         parts << T("%1 chars").arg(charCount(rec.content))
               << T("%1 lines").arg(lineCount(rec.content));
     parts << absTime;
@@ -108,7 +114,7 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
     QString verb;
     if (rec.type == ContentType::Files) {
         verb = T("reveal in file manager");
-    } else if (rec.type == ContentType::Text || rec.type == ContentType::RichText) {
+    } else if (!masked && (rec.type == ContentType::Text || rec.type == ContentType::RichText)) {
         switch (detectOpenTarget(rec.content).kind) {
             case OpenKind::Url:   verb = T("open link"); break;
             case OpenKind::Email: verb = T("open email"); break;
@@ -143,7 +149,7 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
         case ContentType::Text:
         case ContentType::RichText: {
             content_->setPixmap(QPixmap());
-            QString t = rec.content;
+            QString t = body;
             if (t.size() > 8000) t = t.left(8000) + QStringLiteral("…");   // capped anyway; keeps it fast
             content_->setText(t);
             ch = textHeight(t);

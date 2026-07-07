@@ -17,6 +17,7 @@ public:
     // `anchor` is the main window's visible rect (top-aligned; size capped to
     // it). `leftSide` places the popup on the left of the window, else right.
     void showPreview(const ClipboardRecord& rec, const QRect& anchor, bool leftSide);
+    void setMaskSensitive(bool on) { maskSensitive_ = on; }
     void scrollByPixels(int dy);
     void page(int dir);   // dir = -1 previous page (up), +1 next page (down)
     void setOpenKeysLabel(const QString& label);   // e.g. "O / 右键", shown in the open hint
@@ -26,6 +27,7 @@ private:
     QLabel* content_ = nullptr;
     QLabel* info_ = nullptr;
     QString openKeysLabel_;
+    bool maskSensitive_ = true;
 };
 
 } // namespace hopy

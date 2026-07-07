@@ -18,16 +18,17 @@ ClipboardRecord ClipboardRepository::fromQuery(const QSqlQuery& q) {
     r.htmlPath  = q.value(6).toString();
     r.rtfPath   = q.value(7).toString();
     r.imagePath = q.value(8).toString();
+    r.sensitive = q.value(9).toInt() != 0;
     return r;
 }
 
 ClipboardRecord ClipboardRepository::upsert(qint64 id, const QString& content, ContentType type,
                                             const QString& htmlPath, const QString& rtfPath,
-                                            const QString& imagePath) {
+                                            const QString& imagePath, bool sensitive) {
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
     QSqlQuery q(db_.connection());
-    q.prepare("INSERT INTO records(id, content, type, created_at, html_path, rtf_path, image_path)"
-              " VALUES(?,?,?,?,?,?,?)"
+    q.prepare("INSERT INTO records(id, content, type, created_at, html_path, rtf_path, image_path, sensitive)"
+              " VALUES(?,?,?,?,?,?,?,?)"
               " ON CONFLICT(id) DO UPDATE SET created_at=excluded.created_at");
     q.addBindValue(id);
     q.addBindValue(content);
@@ -36,19 +37,20 @@ ClipboardRecord ClipboardRepository::upsert(qint64 id, const QString& content, C
     q.addBindValue(htmlPath.isEmpty() ? QVariant() : htmlPath);
     q.addBindValue(rtfPath.isEmpty()  ? QVariant() : rtfPath);
     q.addBindValue(imagePath.isEmpty()? QVariant() : imagePath);
+    q.addBindValue(sensitive ? 1 : 0);
     if (!q.exec()) qWarning("hopy: upsert failed: %s", qPrintable(q.lastError().text()));
     return getById(id).value_or(ClipboardRecord{});
 }
 
-ClipboardRecord ClipboardRepository::saveText(const QString& text) {
+ClipboardRecord ClipboardRepository::saveText(const QString& text, bool sensitive) {
     const auto id = static_cast<qint64>(Hash::contentHash(ContentType::Text, text.toUtf8()));
-    return upsert(id, text, ContentType::Text, {}, {}, {});
+    return upsert(id, text, ContentType::Text, {}, {}, {}, sensitive);
 }
 
 ClipboardRecord ClipboardRepository::saveRichText(const QString& plain, const QString& htmlPath,
-                                                  const QString& rtfPath) {
+                                                  const QString& rtfPath, bool sensitive) {
     const auto id = static_cast<qint64>(Hash::contentHash(ContentType::RichText, plain.toUtf8()));
-    return upsert(id, plain, ContentType::RichText, htmlPath, rtfPath, {});
+    return upsert(id, plain, ContentType::RichText, htmlPath, rtfPath, {}, sensitive);
 }
 
 ClipboardRecord ClipboardRepository::saveImage(const QString& imagePath, quint64 imageHash) {
@@ -64,7 +66,7 @@ ClipboardRecord ClipboardRepository::saveFiles(const QStringList& paths) {
 
 std::optional<ClipboardRecord> ClipboardRepository::getById(qint64 id) const {
     QSqlQuery q(db_.connection());
-    q.prepare("SELECT id,content,type,created_at,pinned,favorite,html_path,rtf_path,image_path"
+    q.prepare("SELECT id,content,type,created_at,pinned,favorite,html_path,rtf_path,image_path,sensitive"
               " FROM records WHERE id=?");
     q.addBindValue(id);
     if (q.exec() && q.next()) return fromQuery(q);
@@ -80,7 +82,7 @@ int ClipboardRepository::count() const {
 QList<ClipboardRecord> ClipboardRepository::recentRecords(int limit) const {
     QList<ClipboardRecord> out;
     QSqlQuery q(db_.connection());
-    q.prepare("SELECT id,content,type,created_at,pinned,favorite,html_path,rtf_path,image_path"
+    q.prepare("SELECT id,content,type,created_at,pinned,favorite,html_path,rtf_path,image_path,sensitive"
               " FROM records ORDER BY pinned DESC, created_at DESC LIMIT ?");
     q.addBindValue(limit);
     if (q.exec()) while (q.next()) out.append(fromQuery(q));

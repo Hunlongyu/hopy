@@ -13,5 +13,6 @@ void setNoActivate(quintptr windowHandle); // force a window to never take focus
 void sendPasteShortcut(bool plainText);
 void suppressAltMenu();                    // defeat the foreground app's Alt-menu when an Alt-based hotkey fires
 bool isForegroundFullscreen();             // true if a fullscreen app (game/video) covers the whole screen
+bool clipboardMarkedSensitive();           // true if the clipboard is OS-flagged "don't store" (password managers)
 
 } // namespace hopy::platform

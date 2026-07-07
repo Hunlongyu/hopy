@@ -14,6 +14,7 @@ struct CapturedPayload {
     QString html;
     QImage image;
     QStringList files;
+    bool sensitive = false;   // OS-flagged secret (password manager) → masked in the UI
 };
 
 PayloadKind preferredKind(bool hasFiles, bool hasRichText, bool hasImage, bool hasText);

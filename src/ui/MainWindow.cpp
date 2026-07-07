@@ -161,6 +161,8 @@ void MainWindow::setSettings(const AppSettings& s) {
     spacePreview_ = s.spacePreview;
     previewLeft_ = (s.previewSide != "right");
     followCursor_ = (s.windowPlacement != "center");
+    if (model_) model_->setMaskSensitive(s.maskSensitive);
+    if (preview_) preview_->setMaskSensitive(s.maskSensitive);
 
     // Content-aware open bindings.
     openKey_ = s.openKey.isEmpty()

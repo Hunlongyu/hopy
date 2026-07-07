@@ -114,6 +114,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     space_ = new QCheckBox();
     autostart_ = new QCheckBox();
     fullscreenBlock_ = new QCheckBox();
+    maskSensitive_ = new QCheckBox();
     openMouse_ = new QComboBox();
     openMouse_->addItem(T("Right-click"), "right");
     openMouse_->addItem(T("Middle-click"), "middle");
@@ -142,7 +143,8 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     addRow(bh, T("Open with mouse"), openMouse_, true);
     addRow(bh, T("Open with key"), openKey_, true);
     addRow(bh, T("Start on boot"), autostart_, true);
-    addRow(bh, T("Suppress hotkey in fullscreen"), fullscreenBlock_, false);
+    addRow(bh, T("Suppress hotkey in fullscreen"), fullscreenBlock_, true);
+    addRow(bh, T("Mask sensitive content"), maskSensitive_, false);
     col->addWidget(bhCard);
 
     QVBoxLayout* st; auto* stCard = makeCard(T("Storage"), st);
@@ -202,7 +204,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     connect(previewSide_, &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
     connect(opacity_, &QSlider::valueChanged, this, [this] { emitChange(); });
     connect(hotkey_, &HotkeyEdit::keySequenceChanged, this, [this] { emitChange(); });
-    for (QCheckBox* c : {pasteImmediate_, hover_, space_, autostart_, fullscreenBlock_})
+    for (QCheckBox* c : {pasteImmediate_, hover_, space_, autostart_, fullscreenBlock_, maskSensitive_})
         connect(c, &QCheckBox::toggled, this, [this] { emitChange(); });
     connect(openMouse_, &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
     connect(openKey_,   &QComboBox::currentIndexChanged, this, [this] { emitChange(); });
@@ -224,6 +226,7 @@ void SettingsPanel::setSettings(const AppSettings& s) {
     space_->setChecked(s.spacePreview);
     autostart_->setChecked(s.autostart);
     fullscreenBlock_->setChecked(s.suppressOnFullscreen);
+    maskSensitive_->setChecked(s.maskSensitive);
     openMouse_->setCurrentIndex(qMax(0, openMouse_->findData(s.openMouseButton)));
     openKey_->setCurrentIndex(qMax(0, openKey_->findData(s.openKey)));
     maxHistory_->setValue(s.maxHistory);
@@ -254,6 +257,7 @@ void SettingsPanel::emitChange() {
     s.spacePreview = space_->isChecked();
     s.autostart = autostart_->isChecked();
     s.suppressOnFullscreen = fullscreenBlock_->isChecked();
+    s.maskSensitive = maskSensitive_->isChecked();
     s.openMouseButton = openMouse_->currentData().toString();
     s.openKey = openKey_->currentData().toString();
     s.maxHistory = maxHistory_->value();

@@ -22,6 +22,7 @@ public:
 
     void setRecords(const QList<ClipboardRecord>& all);
     void setFilter(ContentFilter filter, const QString& search);
+    void setMaskSensitive(bool on);   // mask OS-flagged secrets in the display roles
     const ClipboardRecord* recordAt(int row) const;
 
     int rowCount(const QModelIndex& parent = {}) const override;
@@ -33,6 +34,7 @@ private:
     QList<int> visible_;          // indices into all_
     ContentFilter filter_ = ContentFilter::All;
     QString search_;
+    bool maskSensitive_ = true;
 };
 
 } // namespace hopy

@@ -1,5 +1,6 @@
 #include "clipboard/ClipboardMonitor.h"
 #include "util/Hash.h"
+#include "platform/ForegroundWindow.h"
 #include <QGuiApplication>
 #include <QClipboard>
 #include <QMimeData>
@@ -40,6 +41,7 @@ void ClipboardMonitor::onClipboardChanged() {
 
     CapturedPayload p;
     p.kind = preferredKind(hasFiles, hasRich, hasImage, hasText);
+    p.sensitive = platform::clipboardMarkedSensitive();   // password-manager "don't store" hint
 
     switch (p.kind) {
         case PayloadKind::Files: {
