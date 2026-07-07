@@ -114,28 +114,12 @@ bool isForegroundFullscreen() {
 }
 
 bool clipboardMarkedSensitive() {
-    // Password managers advertise "don't keep this" by putting one of these marker
-    // formats on the clipboard next to the data. (The same hints Win+V history reads.)
+    // A password manager marks a real secret with this format. We deliberately do NOT
+    // honour the weaker "CanIncludeInClipboardHistory = 0" hint: Remote Desktop
+    // redirection (rdpclip), cloud-clipboard opt-outs and other non-secret sources set
+    // it on ALL content, which used to mask ordinary pastes such as large code dumps.
     static const UINT fmtExclude = RegisterClipboardFormatW(L"ExcludeClipboardContentFromMonitorProcessing");
-    static const UINT fmtHistory = RegisterClipboardFormatW(L"CanIncludeInClipboardHistory");
-    if (fmtExclude && IsClipboardFormatAvailable(fmtExclude)) return true;
-    if (fmtHistory && IsClipboardFormatAvailable(fmtHistory)) {
-        // Present → the source app set the history hint; its DWORD is 0 to exclude.
-        // If we can't read it, treat presence as exclude (apps only add it to opt out).
-        bool sensitive = true;
-        if (OpenClipboard(nullptr)) {
-            if (HANDLE h = GetClipboardData(fmtHistory)) {
-                if (const void* p = GlobalLock(h)) {
-                    if (GlobalSize(h) >= sizeof(DWORD))
-                        sensitive = (*reinterpret_cast<const DWORD*>(p) == 0);
-                    GlobalUnlock(h);
-                }
-            }
-            CloseClipboard();
-        }
-        return sensitive;
-    }
-    return false;
+    return fmtExclude && IsClipboardFormatAvailable(fmtExclude);
 }
 
 } // namespace hopy::platform
