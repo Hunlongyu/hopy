@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <rect width="1280" height="640" fill="#2d2d2d"/>
+  <rect x="700" y="66" width="512" height="508" rx="30" fill="#6b8cff" opacity="0.06"/>
+
+  <!-- Wordmark + tagline -->
+  <text x="78" y="252" font-size="150" font-weight="800" fill="#ffffff" letter-spacing="-4">hopy</text>
+  <rect x="84" y="286" width="132" height="7" rx="3" fill="#6b8cff"/>
+  <text x="86" y="360" font-size="38" font-weight="600" fill="#d4dbea">插入符跟随 · 永不抢焦点 · 精准回贴</text>
+  <text x="86" y="408" font-size="25" fill="#8b93a3">轻量剪贴板管理器 · Qt 6 + SQLite · Windows 单文件</text>
+
+  <!-- Feature chips -->
+  <g font-size="22" text-anchor="middle">
+    <rect x="86"  y="454" width="140" height="46" rx="23" fill="#6b8cff" opacity="0.14"/>
+    <text x="156" y="483" fill="#9db0ff">颜色值卡片</text>
+    <rect x="238" y="454" width="164" height="46" rx="23" fill="#6b8cff" opacity="0.14"/>
+    <text x="320" y="483" fill="#9db0ff">内容感知打开</text>
+    <rect x="414" y="454" width="122" height="46" rx="23" fill="#6b8cff" opacity="0.14"/>
+    <text x="475" y="483" fill="#9db0ff">隐私遮罩</text>
+  </g>
+
+  <!-- App window mock -->
+  <g>
+    <rect x="742" y="112" width="430" height="416" rx="18" fill="#3c3c3c" stroke="#4b4b4b" stroke-width="1.5"/>
+    <rect x="766" y="140" width="252" height="40" rx="10" fill="#333333"/>
+    <text x="786" y="167" font-size="20" fill="#7d7d7d">搜索…</text>
+    <rect x="1030" y="140" width="40" height="40" rx="9" fill="#333333"/>
+    <rect x="1084" y="140" width="40" height="40" rx="9" fill="#333333"/>
+
+    <!-- selected: color-value card -->
+    <rect x="760" y="200" width="394" height="66" rx="12" fill="#6b8cff" opacity="0.16"/>
+    <rect x="780" y="220" width="28" height="28" rx="6" fill="#6b8cff"/>
+    <text x="822" y="242" font-size="22" fill="#f0f0f0">#6b8cff</text>
+    <text x="1136" y="240" font-size="16" fill="#8a8a8a" text-anchor="end">刚刚</text>
+
+    <!-- link row -->
+    <text x="780" y="312" font-size="21" fill="#8ea6ff">github.com/Hunlongyu/hopy</text>
+    <text x="1136" y="312" font-size="16" fill="#8a8a8a" text-anchor="end">2 分钟前</text>
+
+    <!-- image row -->
+    <rect x="780" y="356" width="40" height="30" rx="4" fill="#555555"/>
+    <path d="M786 380 l10 -12 8 9 5 -6 9 9z" fill="#7f7f7f"/>
+    <text x="836" y="380" font-size="21" fill="#f0f0f0">screenshot.png</text>
+    <text x="1136" y="380" font-size="16" fill="#8a8a8a" text-anchor="end">1 小时前</text>
+
+    <!-- text row -->
+    <text x="780" y="452" font-size="21" fill="#f0f0f0">会议纪要 · 2026-07-08</text>
+    <text x="1136" y="452" font-size="16" fill="#8a8a8a" text-anchor="end">昨天</text>
+
+    <line x1="760" y1="288" x2="1154" y2="288" stroke="#484848" stroke-width="1"/>
+    <line x1="760" y1="336" x2="1154" y2="336" stroke="#484848" stroke-width="1"/>
+    <line x1="760" y1="410" x2="1154" y2="410" stroke="#484848" stroke-width="1"/>
+  </g>
+</svg>
