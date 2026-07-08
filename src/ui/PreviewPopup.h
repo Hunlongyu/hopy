@@ -19,13 +19,15 @@ public:
     void showPreview(const ClipboardRecord& rec, const QRect& anchor, bool leftSide);
     void setMaskSensitive(bool on) { maskSensitive_ = on; }
     void scrollByPixels(int dy);
-    void page(int dir);   // dir = -1 previous page (up), +1 next page (down)
     void setOpenKeysLabel(const QString& label);   // e.g. "O / 右键", shown in the open hint
 
 private:
+    void updateScrollPercent();   // refresh the top-right "NN%" scroll indicator
+
     QScrollArea* scroll_ = nullptr;
     QLabel* content_ = nullptr;
     QLabel* info_ = nullptr;
+    QLabel* pct_ = nullptr;        // scroll progress, right of the info bar (blank when content fits)
     QString openKeysLabel_;
     bool maskSensitive_ = true;
 };

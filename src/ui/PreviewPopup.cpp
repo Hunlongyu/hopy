@@ -3,6 +3,7 @@
 #include "util/TextInfo.h"
 #include "util/OpenTarget.h"
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -48,24 +49,41 @@ PreviewPopup::PreviewPopup(QWidget* parent) : QWidget(parent) {
     info_ = new QLabel(card);
     info_->setObjectName("PreviewInfo");
     info_->setWordWrap(false);
+    pct_ = new QLabel(card);
+    pct_->setObjectName("PreviewInfo");   // same muted styling as the meta line
+    pct_->setWordWrap(false);
+    pct_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     {
         QFont f = info_->font();
         f.setPixelSize(11);
         info_->setFont(f);
+        pct_->setFont(f);
     }
-    lay->addWidget(info_);   // sits above the scroll area
+    auto* infoRow = new QHBoxLayout();
+    infoRow->setContentsMargins(0, 0, 0, 0);
+    infoRow->setSpacing(8);
+    infoRow->addWidget(info_, 1);   // meta line takes the width; percentage hugs the right
+    infoRow->addWidget(pct_, 0);
+    lay->addLayout(infoRow);         // sits above the scroll area
 
     lay->addWidget(scroll_);
+
+    // Live scroll progress from any source (momentum, wheel, keyboard).
+    if (auto* vb = scroll_->verticalScrollBar()) {
+        connect(vb, &QScrollBar::valueChanged, this, [this] { updateScrollPercent(); });
+        connect(vb, &QScrollBar::rangeChanged,  this, [this] { updateScrollPercent(); });
+    }
+}
+
+void PreviewPopup::updateScrollPercent() {
+    auto* vb = scroll_->verticalScrollBar();
+    const int max = vb ? vb->maximum() : 0;
+    if (max <= 0) { pct_->clear(); return; }   // content fits → nothing to scroll
+    pct_->setText(QStringLiteral("%1%").arg(qRound(100.0 * vb->value() / max)));
 }
 
 void PreviewPopup::scrollByPixels(int dy) {
     if (auto* vb = scroll_->verticalScrollBar()) vb->setValue(vb->value() + dy);
-}
-
-void PreviewPopup::page(int dir) {
-    // One viewport-worth minus a small overlap so nothing is skipped.
-    if (auto* vb = scroll_->verticalScrollBar())
-        vb->setValue(vb->value() + dir * qMax(1, vb->pageStep() - 16));
 }
 
 void PreviewPopup::setOpenKeysLabel(const QString& label) { openKeysLabel_ = label; }
@@ -165,6 +183,7 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
     const int h = qMin(ch + 24 + infoH + 6, maxH);   // +infoH + the 6px layout spacing
     resize(w, h);
     scroll_->verticalScrollBar()->setValue(0);
+    updateScrollPercent();   // reset the indicator for the new content (0% or blank if it fits)
 
     // Fixed side (left by default), right edge adjacent to the main window's
     // left edge (or left edge adjacent to its right edge). Top-aligned.

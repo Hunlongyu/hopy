@@ -68,7 +68,7 @@ private:
     void moveSelection(int delta);
     void showPreviewRow(int row);
     void hidePreview();
-    bool pagePreview(Qt::MouseButton button);   // M1/M2 side buttons page the preview
+    void onSideScroll(int dir, bool pressed);   // M4/M5 press → momentum-scroll the preview
     void setFilter(ContentFilter f);
     void confirmCurrent(bool plainText);
     void confirmByIndex(int index);
@@ -101,6 +101,9 @@ private:
 
     PreviewPopup* preview_ = nullptr;
     QTimer* hoverTimer_ = nullptr;
+    QTimer* sideScrollTimer_ = nullptr;   // ~60fps momentum ticker for M4/M5 preview scrolling
+    double sideVel_ = 0.0;                // scroll velocity px/frame (+ down / - up); decays each frame
+    double sideAccum_ = 0.0;             // sub-pixel carry so slow glides still move
     int hoverRow_ = -1;
     bool hoverPreview_ = true;
     bool spacePreview_ = true;

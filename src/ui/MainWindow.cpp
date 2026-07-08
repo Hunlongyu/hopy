@@ -48,6 +48,16 @@ namespace {
 QToolButton* iconButton(const QString& svgName, const QString& tip, bool checkable = false) {
     return new IconButton(svgName, tip, checkable);
 }
+
+// Preview scrolling with the mouse side buttons (M4/M5). These buttons report a
+// brief press pulse, not a sustained hold, so scrolling is momentum-based: each
+// press injects velocity that eases out; rapid presses accumulate into a fast,
+// smooth continuous scroll.
+constexpr double kSideKick     = 18.0;   // velocity (px/frame) added per press
+constexpr double kSideMaxVel   = 60.0;   // velocity ceiling (~3600 px/s at 60fps)
+constexpr double kSideFriction = 0.90;   // per-frame decay → gentle glide-out
+constexpr double kSideStopVel  = 0.4;    // glide ends once velocity drops below this
+constexpr int    kSideTickMs   = 16;     // momentum frame interval (~60fps)
 } // namespace
 
 MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
@@ -72,6 +82,19 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
         // fire right as we appear.
         if (isVisible() && (!showTimer_.isValid() || showTimer_.elapsed() > 200))
             hide();
+    });
+
+    // Mouse side buttons (M4/M5) momentum-scroll a visible preview.
+    connect(inputHook_, &platform::InputHook::sideScroll, this, &MainWindow::onSideScroll);
+    sideScrollTimer_ = new QTimer(this);
+    connect(sideScrollTimer_, &QTimer::timeout, this, [this] {
+        if (!preview_ || !preview_->isVisible()) { sideScrollTimer_->stop(); sideVel_ = sideAccum_ = 0.0; return; }
+        sideAccum_ += sideVel_;
+        const int dy = int(sideAccum_);
+        sideAccum_ -= dy;
+        if (dy) preview_->scrollByPixels(dy);
+        sideVel_ *= kSideFriction;
+        if (qAbs(sideVel_) < kSideStopVel) { sideVel_ = sideAccum_ = 0.0; sideScrollTimer_->stop(); }
     });
 
     // Rounded content container with a drop shadow inside a transparent margin.
@@ -182,19 +205,29 @@ void MainWindow::setSettings(const AppSettings& s) {
 
 void MainWindow::showPreviewRow(int row) {
     const ClipboardRecord* r = model_->recordAt(row);
-    if (r) preview_->showPreview(*r, geometry().adjusted(16, 16, -16, -16), previewLeft_); // visible rect (drop shadow margin)
+    if (r) {
+        preview_->showPreview(*r, geometry().adjusted(16, 16, -16, -16), previewLeft_); // visible rect (drop shadow margin)
+        inputHook_->setSideScrollActive(true);   // capture M4/M5 for scrolling while shown
+    }
 }
 
 void MainWindow::hidePreview() {
     hoverTimer_->stop();
+    sideScrollTimer_->stop();
+    sideVel_ = sideAccum_ = 0.0;
+    inputHook_->setSideScrollActive(false);
     if (preview_) preview_->hide();
 }
 
-bool MainWindow::pagePreview(Qt::MouseButton button) {
-    if (!preview_ || !preview_->isVisible()) return false;
-    if (button == Qt::BackButton)    { preview_->page(+1); return true; }  // M4 (back)    → 下翻 next page
-    if (button == Qt::ForwardButton) { preview_->page(-1); return true; }  // M5 (forward) → 上翻 previous page
-    return false;
+// M4/M5 pressed over a visible preview. The buttons only report a press pulse (no
+// hold), so each press injects velocity and the momentum ticker eases it out; rapid
+// presses accumulate into a fast, smooth continuous scroll.
+void MainWindow::onSideScroll(int dir, bool pressed) {
+    if (!pressed) return;                    // ignore the release; momentum keeps gliding
+    if (!preview_ || !preview_->isVisible()) return;
+    if (dir * sideVel_ < 0) sideVel_ = 0.0;  // reversing direction → respond at once
+    sideVel_ = qBound(-kSideMaxVel, sideVel_ + dir * kSideKick, kSideMaxVel);
+    if (!sideScrollTimer_->isActive()) sideScrollTimer_->start(kSideTickMs);
 }
 
 void MainWindow::showList()     { stack_->setCurrentIndex(0); }
@@ -479,10 +512,8 @@ bool MainWindow::handleNavKey(QKeyEvent* ev) {
 bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
     // Keys are posted straight to MainWindow by the input hook (this window never
     // holds OS focus), so search_/list_ never see a KeyPress here — only mouse.
-    if (ev->type() == QEvent::MouseButtonPress) {
-        // Mouse side buttons (M1/M2) page a visible preview instead of hitting the list.
-        if (pagePreview(static_cast<QMouseEvent*>(ev)->button())) return true;
-    }
+    // (Side buttons M4/M5 are captured by the input hook for preview scrolling, so
+    // they never surface as Qt mouse events here.)
     if (ev->type() == QEvent::MouseButtonRelease && obj == list_->viewport()) {
         auto* me = static_cast<QMouseEvent*>(ev);
         if (openMouseButton_ != Qt::NoButton && me->button() == openMouseButton_) {
@@ -542,7 +573,6 @@ void MainWindow::changeEvent(QEvent* ev) {
 }
 
 void MainWindow::mousePressEvent(QMouseEvent* ev) {
-    if (pagePreview(ev->button())) return;   // M1/M2 over blank areas page the preview too
     if (ev->button() == Qt::LeftButton) {
         // Drag the frameless window when pressing a non-interactive area (title bar,
         // blank space). Interactive widgets (buttons, inputs, the list) keep their behaviour.

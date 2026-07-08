@@ -18,6 +18,8 @@ HWND          g_targetWnd = nullptr;
 InputHook*    g_self      = nullptr;
 bool          g_down[256] = {};
 bool          g_prevFgOwn = false;   // was the previously-seen foreground window one of ours?
+bool          g_sideScroll = false;  // capture M4/M5 for preview scrolling (set while a preview is shown)
+int           g_sideHeld   = 0;      // dir of a side button we swallowed on press, so we swallow its release too
 
 // True when h belongs to this process — our own combobox/menu popups and modal
 // dialogs are separate top-level windows. A foreground switch to one of them, or
@@ -119,6 +121,28 @@ LRESULT CALLBACK mouseProc(int code, WPARAM wp, LPARAM lp) {
             !isOwnWindow(WindowFromPoint(m->pt)))   // a click on our own popup must not dismiss
             emit g_self->dismissRequested();   // clicked outside hopy → hide (don't swallow)
     }
+    // Side buttons drive the preview scroll. We swallow them (return 1) so Qt never
+    // turns a fast double-press into a MouseButtonDblClick that would paste + close.
+    if (code == HC_ACTION && g_self && (wp == WM_XBUTTONDOWN || wp == WM_XBUTTONUP)) {
+        const auto* m = reinterpret_cast<MSLLHOOKSTRUCT*>(lp);
+        const int dir = (HIWORD(m->mouseData) == XBUTTON1) ? +1     // M4 (back)    → scroll down
+                      : (HIWORD(m->mouseData) == XBUTTON2) ? -1     // M5 (forward) → scroll up
+                      : 0;
+        if (dir != 0) {
+            if (wp == WM_XBUTTONDOWN && g_sideScroll) {
+                g_sideHeld = dir;
+                emit g_self->sideScroll(dir, true);
+                return 1;
+            }
+            // Always finish a press we swallowed, even if the preview closed mid-hold,
+            // so the scroll stops and the release never leaks to the app underneath.
+            if (wp == WM_XBUTTONUP && g_sideHeld == dir) {
+                g_sideHeld = 0;
+                emit g_self->sideScroll(dir, false);
+                return 1;
+            }
+        }
+    }
     return CallNextHookEx(nullptr, code, wp, lp);
 }
 
@@ -143,6 +167,8 @@ void InputHook::start(QWidget* keyTarget) {
     g_target    = keyTarget;
     g_targetWnd = keyTarget ? reinterpret_cast<HWND>(keyTarget->winId()) : nullptr;
     g_self      = this;
+    g_sideScroll = false;
+    g_sideHeld   = 0;
     for (bool& d : g_down) d = false;
     const HMODULE mod = GetModuleHandleW(nullptr);
     if (!g_kbHook)    g_kbHook    = SetWindowsHookExW(WH_KEYBOARD_LL, kbProc,    mod, 0);
@@ -156,10 +182,14 @@ void InputHook::stop() {
     if (g_kbHook)    { UnhookWindowsHookEx(g_kbHook);    g_kbHook    = nullptr; }
     if (g_mouseHook) { UnhookWindowsHookEx(g_mouseHook); g_mouseHook = nullptr; }
     if (g_fgHook)    { UnhookWinEvent(g_fgHook);         g_fgHook    = nullptr; }
-    g_target    = nullptr;
-    g_targetWnd = nullptr;
-    g_self      = nullptr;
+    g_target     = nullptr;
+    g_targetWnd  = nullptr;
+    g_self       = nullptr;
+    g_sideScroll = false;
+    g_sideHeld   = 0;
 }
+
+void InputHook::setSideScrollActive(bool on) { g_sideScroll = on; }
 
 } // namespace hopy::platform
 
@@ -170,6 +200,7 @@ InputHook::InputHook(QObject* parent) : QObject(parent) {}
 InputHook::~InputHook() {}
 void InputHook::start(QWidget*) {}
 void InputHook::stop() {}
+void InputHook::setSideScrollActive(bool) {}
 } // namespace hopy::platform
 
 #endif

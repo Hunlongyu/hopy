@@ -19,8 +19,14 @@ public:
     void start(QWidget* keyTarget);   // install hooks, route keys to keyTarget
     void stop();                      // uninstall
 
+    // While active, the mouse side buttons (M4/M5) are captured and reported via
+    // sideScroll() instead of reaching Qt — so they drive the preview scroll and can
+    // never be mis-read as clicks/double-clicks. Enabled only while a preview is shown.
+    void setSideScrollActive(bool on);
+
 signals:
     void dismissRequested();          // user clicked away / switched windows → hide
+    void sideScroll(int dir, bool pressed);   // M4 (dir +1, down) / M5 (dir -1, up) pressed or released
 };
 
 } // namespace hopy::platform
