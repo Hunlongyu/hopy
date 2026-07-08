@@ -82,7 +82,7 @@ TrayIcon::TrayIcon(QObject* parent) : QObject(parent) {
 
     rebuildIcons();
     tray_->setContextMenu(menu_);
-    tray_->setToolTip(QStringLiteral("Hopy"));
+    tray_->setToolTip(QStringLiteral("Hopy\n") + T("Clipboard manager"));
     tray_->show();
 }
 
@@ -105,6 +105,7 @@ void TrayIcon::retranslate() {
     pauseAct_->setText(T("Pause monitoring"));
     autostartAct_->setText(T("Launch at startup"));
     quitAct_->setText(T("Quit"));
+    tray_->setToolTip(QStringLiteral("Hopy\n") + T("Clipboard manager"));
 }
 
 void TrayIcon::setPaused(bool on) {

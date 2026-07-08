@@ -134,6 +134,7 @@ const QHash<QByteArray, QString>& zh() {
         {"About",           QStringLiteral("关于")},
         {"Version %1",      QStringLiteral("版本 %1")},
         {"A lightweight clipboard manager.", QStringLiteral("轻量的剪贴板管理器。")},
+        {"Clipboard manager", QStringLiteral("剪贴板管理器")},
         {"Author",          QStringLiteral("作者")},
         {"Tech",            QStringLiteral("技术")},
         {"License",         QStringLiteral("协议")},
