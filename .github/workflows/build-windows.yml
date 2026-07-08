@@ -6,9 +6,8 @@ name: build-windows
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]          # a version tag also builds AND publishes a Release
-  workflow_dispatch:
+    tags: [ 'v*' ]          # build + publish a Release ONLY on a version tag
+  workflow_dispatch: {}      # manual run from the Actions tab when needed
 
 concurrency:
   group: build-windows-${{ github.ref }}
