@@ -93,6 +93,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     language_->addItem(QStringLiteral("English"), "en");
     language_->setFixedWidth(120);
     theme_ = new QComboBox();
+    theme_->addItem(T("Auto"), "auto");
     theme_->addItem(T("Dark"), "dark");
     theme_->addItem(T("Light"), "light");
     theme_->setFixedWidth(120);
@@ -271,7 +272,7 @@ void SettingsPanel::setSettings(const AppSettings& s) {
     loading_ = true;
     current_ = s;
     language_->setCurrentIndex(s.language == "zh" ? 1 : s.language == "en" ? 2 : 0);
-    theme_->setCurrentIndex(s.theme == "light" ? 1 : 0);
+    theme_->setCurrentIndex(s.theme == "dark" ? 1 : s.theme == "light" ? 2 : 0);
     placement_->setCurrentIndex(s.windowPlacement == "center" ? 1 : 0);
     previewSide_->setCurrentIndex(s.previewSide == "right" ? 1 : 0);
     opacity_->setValue(s.windowOpacity);

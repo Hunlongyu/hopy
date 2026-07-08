@@ -29,7 +29,7 @@ AppSettings Settings::fromJson(const QByteArray& json) {
     if (o.contains("openKey"))         s.openKey = o["openKey"].toString(s.openKey);
     if (o.contains("openMouseButton")) s.openMouseButton = o["openMouseButton"].toString(s.openMouseButton);
 
-    if (s.theme != "dark" && s.theme != "light") s.theme = "dark";
+    if (s.theme != "dark" && s.theme != "light" && s.theme != "auto") s.theme = "auto";
     if (s.language != "zh" && s.language != "en" && s.language != "auto") s.language = "auto";
     if (s.previewSide != "left" && s.previewSide != "right") s.previewSide = "left";
     if (s.windowPlacement != "cursor" && s.windowPlacement != "center") s.windowPlacement = "cursor";

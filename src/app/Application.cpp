@@ -17,6 +17,7 @@
 #include "util/Hash.h"
 #include "util/I18n.h"
 #include <QApplication>
+#include <QStyleHints>
 #include <QCoreApplication>
 #include <QFile>
 #include <QImage>
@@ -56,6 +57,10 @@ void Application::start() {
     paste_ = new PasteService(this);
     monitor_ = new ClipboardMonitor(this);
     tray_ = new TrayIcon(this);
+    // In "auto" theme mode, re-apply live when the OS switches between light/dark.
+    connect(qApp->styleHints(), &QStyleHints::colorSchemeChanged, this, [this](Qt::ColorScheme) {
+        if (settings_.theme == "auto") { applyTheme("auto"); tray_->applyTheme(); }
+    });
     connect(updater_, &UpdateService::updateBadge, this, [this](bool pending, const QString& tag) {
         tray_->setUpdateBadge(pending);
         window_->setUpdateBadge(pending, tag);

@@ -1,5 +1,6 @@
 #include "ui/Theme.h"
 #include <QApplication>
+#include <QStyleHints>
 #include <QPalette>
 #include <QColor>
 #include <QFile>
@@ -61,7 +62,11 @@ QPalette lightPalette() {
 } // namespace
 
 void applyTheme(const QString& name) {
-    const bool light = (name == "light");
+    // "auto" follows the OS colour scheme (Qt 6.5+); explicit dark/light override it.
+    bool light;
+    if (name == "light")     light = true;
+    else if (name == "dark") light = false;
+    else                     light = (qApp->styleHints()->colorScheme() == Qt::ColorScheme::Light);
     qApp->setPalette(light ? lightPalette() : darkPalette());
 
     QFile f(light ? ":/themes/light.qss" : ":/themes/dark.qss");
