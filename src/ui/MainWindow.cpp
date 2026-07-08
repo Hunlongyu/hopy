@@ -574,6 +574,8 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
             const QModelIndex ix = list_->indexAt(me->pos());
             const int slot = ix.isValid()
                 ? RecordDelegate::actionSlotAt(list_->visualRect(ix), me->pos()) : -1;
+            if (delegate_->setHoveredAction(slot >= 0 ? ix.row() : -1, slot))
+                vp->update();   // repaint so the hovered icon highlights
             if (slot >= 0)
                 armTip(vp, slot == 0 ? T("Favorite")
                          : slot == 1 ? T("Pin to top") : T("Delete"));
@@ -594,6 +596,7 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
             hoverRow_ = -1;
             hidePreview();
             clearTip();
+            if (delegate_->setHoveredAction(-1, -1)) vp->update();
         }
     }
     return QWidget::eventFilter(obj, ev);

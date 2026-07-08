@@ -31,6 +31,13 @@ int RecordDelegate::actionSlotAt(const QRect& itemRect, const QPoint& pos) {
     return (slot >= 0 && slot <= 2) ? slot : -1;
 }
 
+bool RecordDelegate::setHoveredAction(int row, int slot) {
+    if (row == hoverRow_ && slot == hoverSlot_) return false;
+    hoverRow_ = row;
+    hoverSlot_ = slot;
+    return true;
+}
+
 bool RecordDelegate::editorEvent(QEvent* ev, QAbstractItemModel*,
                                  const QStyleOptionViewItem& opt, const QModelIndex& idx) {
     if (ev->type() != QEvent::MouseButtonRelease) return false;
@@ -105,6 +112,11 @@ void RecordDelegate::paint(QPainter* p, const QStyleOptionViewItem& opt, const Q
     const QColor subColor  = pal.color(QPalette::Mid);
     const QColor accent    = pal.color(QPalette::Highlight);
     const QColor cardBorder = pal.color(QPalette::Midlight);
+    // Action-icon idle/hover colours — identical to the toolbar IconButton so the
+    // star/pin/delete icons feel consistent with the header buttons.
+    const bool darkUi = pal.color(QPalette::Window).lightnessF() < 0.5;
+    const QColor iconIdle  = darkUi ? QColor(0xd8, 0xd8, 0xda) : QColor(0x45, 0x48, 0x4d);
+    const QColor iconHover = darkUi ? QColor(0xff, 0xff, 0xff) : QColor(0x1a, 0x1a, 0x1a);
 
     const QRect card = opt.rect.adjusted(kCardMarginX, kCardMarginY, -kCardMarginX, -kCardMarginY);
     QPainterPath path;
@@ -131,14 +143,20 @@ void RecordDelegate::paint(QPainter* p, const QStyleOptionViewItem& opt, const Q
     // Right-side action icons (favorite / pin / delete)
     const int isz = 15;
     const QRect actions = actionsRect(opt.rect);
-    auto drawIcon = [&](int slot, const QString& name, const QColor& col) {
+    auto drawIcon = [&](int slot, const QString& name, const QColor& baseCol) {
         QRect cell(actions.left() + kGlyphW * slot, actions.top(), kGlyphW, 20);
+        QColor col = baseCol;
+        if (idx.row() == hoverRow_ && slot == hoverSlot_) {   // hover: recolour the icon only
+            if (slot == 2)                    col = QColor(0xe5, 0x53, 0x4b);  // delete → red
+            else if (baseCol == iconIdle)     col = iconHover;                 // inactive → toolbar hover colour
+            else                              col = col.lighter(120);          // active accent → lighten
+        }
         QRect ir(0, 0, isz, isz); ir.moveCenter(cell.center());
         p->drawPixmap(ir, icons::svgPixmap(name, col, isz));
     };
-    drawIcon(0, QStringLiteral("filter-star"), favorite ? accent : subColor);
-    drawIcon(1, QStringLiteral("pin-to-top"), pinned ? accent : subColor);
-    drawIcon(2, QStringLiteral("circle-x"), subColor);
+    drawIcon(0, QStringLiteral("filter-star"), favorite ? accent : iconIdle);
+    drawIcon(1, QStringLiteral("pin-to-top"), pinned ? accent : iconIdle);
+    drawIcon(2, QStringLiteral("circle-x"), iconIdle);
 
     // Meta text (index + timestamp) + type marker at far right
     QFont mf = opt.font; mf.setPointSizeF(opt.font.pointSizeF() - 1);
