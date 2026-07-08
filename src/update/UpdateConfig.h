@@ -26,6 +26,17 @@ inline QString releasesPageUrl() {
         .arg(QLatin1String(kRepoOwner), QLatin1String(kRepoName));
 }
 
+// The project's repository home page.
+inline QString repoUrl() {
+    return QStringLiteral("https://github.com/%1/%2")
+        .arg(QLatin1String(kRepoOwner), QLatin1String(kRepoName));
+}
+
+// The author's GitHub profile page.
+inline QString ownerUrl() {
+    return QStringLiteral("https://github.com/%1").arg(QLatin1String(kRepoOwner));
+}
+
 // github.com's per-repo Atom feed of releases. A web endpoint (not the REST API),
 // so it dodges the 60/hour unauthenticated limit. Each <entry> carries the
 // rendered release notes as escaped HTML in <content type="html">.

@@ -28,6 +28,7 @@ QPalette darkPalette() {
     p.setColor(QPalette::PlaceholderText, sub);
     p.setColor(QPalette::Disabled, QPalette::Text, sub);
     p.setColor(QPalette::Mid, sub);
+    p.setColor(QPalette::Link, highlight);                   // rich-text <a> links (About card)
     p.setColor(QPalette::Midlight, QColor(0x4c, 0x4c, 0x4c)); // card border
     return p;
 }
@@ -52,6 +53,7 @@ QPalette lightPalette() {
     p.setColor(QPalette::PlaceholderText, sub);
     p.setColor(QPalette::Disabled, QPalette::Text, sub);
     p.setColor(QPalette::Mid, sub);
+    p.setColor(QPalette::Link, highlight);                   // rich-text <a> links (About card)
     p.setColor(QPalette::Midlight, QColor(0xe0, 0xe0, 0xe0)); // card border
     return p;
 }

@@ -97,7 +97,7 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     theme_->addItem(T("Light"), "light");
     theme_->setFixedWidth(120);
     placement_ = new QComboBox();
-    placement_->addItem(T("Follow caret"), "cursor");
+    placement_->addItem(T("Mouse position"), "cursor");
     placement_->addItem(T("Screen center"), "center");
     placement_->setFixedWidth(120);
     previewSide_ = new QComboBox();
@@ -127,25 +127,31 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     maxHistory_ = new QSpinBox(); maxHistory_->setRange(10, 1000); maxHistory_->setFixedWidth(110);
     maxStorage_ = new QSpinBox(); maxStorage_->setRange(10, 1000); maxStorage_->setFixedWidth(110);
 
-    QVBoxLayout* ap; auto* apCard = makeCard(T("Appearance"), ap);
-    addRow(ap, T("Language"), language_, true);
-    addRow(ap, T("Theme"), theme_, true);
-    addRow(ap, T("Window position"), placement_, true);
-    addRow(ap, T("Preview side"), previewSide_, true);
-    addRow(ap, T("Opacity"), opacity_, false);
-    col->addWidget(apCard);
+    QVBoxLayout* gn; auto* gnCard = makeCard(T("General"), gn);
+    addRow(gn, T("Language"), language_, true);
+    addRow(gn, T("Theme"), theme_, true);
+    addRow(gn, T("Opacity"), opacity_, true);
+    addRow(gn, T("Start on boot"), autostart_, false);
+    col->addWidget(gnCard);
 
-    QVBoxLayout* bh; auto* bhCard = makeCard(T("Behavior"), bh);
-    addRow(bh, T("Activation hotkey"), hotkey_, true);
-    addRow(bh, T("Paste immediately on confirm"), pasteImmediate_, true);
-    addRow(bh, T("Hover preview"), hover_, true);
-    addRow(bh, T("Space preview"), space_, true);
-    addRow(bh, T("Open with mouse"), openMouse_, true);
-    addRow(bh, T("Open with key"), openKey_, true);
-    addRow(bh, T("Start on boot"), autostart_, true);
-    addRow(bh, T("Suppress hotkey in fullscreen"), fullscreenBlock_, true);
-    addRow(bh, T("Mask sensitive content"), maskSensitive_, false);
-    col->addWidget(bhCard);
+    QVBoxLayout* ac; auto* acCard = makeCard(T("Activation"), ac);
+    addRow(ac, T("Activation hotkey"), hotkey_, true);
+    addRow(ac, T("Open with mouse"), openMouse_, true);
+    addRow(ac, T("Open with key"), openKey_, true);
+    addRow(ac, T("Suppress hotkey in fullscreen"), fullscreenBlock_, false);
+    col->addWidget(acCard);
+
+    QVBoxLayout* pv; auto* pvCard = makeCard(T("Panel & Preview"), pv);
+    addRow(pv, T("Fallback position"), placement_, true);
+    addRow(pv, T("Hover preview"), hover_, true);
+    addRow(pv, T("Space preview"), space_, true);
+    addRow(pv, T("Preview side"), previewSide_, false);
+    col->addWidget(pvCard);
+
+    QVBoxLayout* pp; auto* ppCard = makeCard(T("Paste & Privacy"), pp);
+    addRow(pp, T("Paste immediately on confirm"), pasteImmediate_, true);
+    addRow(pp, T("Mask sensitive content"), maskSensitive_, false);
+    col->addWidget(ppCard);
 
     QVBoxLayout* st; auto* stCard = makeCard(T("Storage"), st);
     addRow(st, T("Items shown"), maxHistory_, true);
@@ -168,16 +174,53 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     col->addWidget(stCard);
 
     QVBoxLayout* ab; auto* abCard = makeCard(T("About"), ab);
-    auto* nameVer = new QLabel(QStringLiteral("Hopy · ") + T("Version %1").arg(currentVersion()));
-    nameVer->setStyleSheet(QStringLiteral("font-weight:600;"));
-    ab->addWidget(nameVer);
-    ab->addSpacing(4);
-    auto* desc = new QLabel(T("A lightweight clipboard manager built with Qt 6 and SQLite."));
+    // Hero: app name + version pill on one line, tagline underneath. No logo — we
+    // don't have our own mark yet.
+    auto* nameRow = new QHBoxLayout();
+    nameRow->setContentsMargins(0, 0, 0, 0);
+    nameRow->setSpacing(8);
+    auto* name = new QLabel(QStringLiteral("Hopy"));
+    name->setStyleSheet(QStringLiteral("font-weight:600;font-size:16px;"));
+    auto* verPill = new QLabel(QStringLiteral("v") + currentVersion());
+    verPill->setObjectName("VersionPill");
+    nameRow->addWidget(name);
+    nameRow->addWidget(verPill);
+    nameRow->addStretch(1);
+    ab->addLayout(nameRow);
+    ab->addSpacing(3);
+    auto* desc = new QLabel(T("A lightweight clipboard manager."));
+    desc->setObjectName("AboutMuted");
     desc->setWordWrap(true);
     ab->addWidget(desc);
-    ab->addSpacing(2);
-    ab->addWidget(new QLabel(T("MIT License")));
-    ab->addSpacing(8);
+    ab->addSpacing(10);
+    auto* abLine = new QFrame();
+    abLine->setObjectName("RowDivider");
+    abLine->setFixedHeight(1);
+    ab->addWidget(abLine);
+    ab->addSpacing(10);
+    // Meta grid: muted label | value, neatly aligned in two columns.
+    auto* meta = new QGridLayout();
+    meta->setContentsMargins(0, 0, 0, 0);
+    meta->setVerticalSpacing(8);
+    meta->setHorizontalSpacing(18);
+    meta->setColumnStretch(1, 1);
+    auto addMeta = [&](int r, const QString& k, QWidget* v) {
+        auto* kl = new QLabel(k);
+        kl->setObjectName("AboutMuted");
+        meta->addWidget(kl, r, 0, Qt::AlignLeft | Qt::AlignVCenter);
+        meta->addWidget(v, r, 1, Qt::AlignLeft | Qt::AlignVCenter);
+    };
+    // Author, linked to the GitHub profile (accent link colour via QPalette::Link).
+    auto* author = new QLabel(
+        QStringLiteral("<a href=\"%1\">Hunlongyu ↗</a>").arg(update::ownerUrl()));
+    author->setTextFormat(Qt::RichText);
+    author->setOpenExternalLinks(true);
+    addMeta(0, T("Author"), author);
+    addMeta(1, T("Tech"), new QLabel(QStringLiteral("Qt 6 · SQLite")));
+    addMeta(2, T("License"), new QLabel(QStringLiteral("MIT License")));
+    addMeta(3, T("Copyright"), new QLabel(QStringLiteral("© 2026 Hunlongyu")));
+    ab->addLayout(meta);
+    ab->addSpacing(12);
     auto* aboutRow = new QWidget();
     auto* arl = new QHBoxLayout(aboutRow);
     arl->setContentsMargins(0, 0, 0, 0);
@@ -185,9 +228,9 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     checkBtn_->setObjectName("CheckUpdateBtn");
     checkBtn_->setCursor(Qt::PointingHandCursor);
     connect(checkBtn_, &QPushButton::clicked, this, &SettingsPanel::checkUpdateRequested);
-    auto* gh = new IconButton(QStringLiteral("github"), QStringLiteral("GitHub"), false);
+    auto* gh = new IconButton(QStringLiteral("github"), T("View on GitHub"), false);
     connect(gh, &QToolButton::clicked, this,
-            [] { QDesktopServices::openUrl(QUrl(update::releasesPageUrl())); });
+            [] { QDesktopServices::openUrl(QUrl(update::repoUrl())); });
     arl->addWidget(checkBtn_);
     arl->addStretch(1);
     arl->addWidget(gh);
