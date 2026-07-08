@@ -122,7 +122,12 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
     openMouse_->setFixedWidth(120);
     openKey_ = new QComboBox();
     openKey_->addItem(T("Off"), "");
-    for (char c = 'A'; c <= 'Z'; ++c) openKey_->addItem(QString(QChar(c)), QString(QChar(c)));
+    // Skip letters already bound to in-panel actions — D=delete, F=favorite,
+    // T=pin-to-top — since those win over the open key and would make it a no-op.
+    for (char c = 'A'; c <= 'Z'; ++c) {
+        if (c == 'D' || c == 'F' || c == 'T') continue;
+        openKey_->addItem(QString(QChar(c)), QString(QChar(c)));
+    }
     openKey_->setFixedWidth(120);
     maxHistory_ = new QSpinBox(); maxHistory_->setRange(10, 1000); maxHistory_->setFixedWidth(110);
     maxStorage_ = new QSpinBox(); maxStorage_->setRange(10, 1000); maxStorage_->setFixedWidth(110);
@@ -210,11 +215,18 @@ SettingsPanel::SettingsPanel(QWidget* parent) : QWidget(parent) {
         meta->addWidget(kl, r, 0, Qt::AlignLeft | Qt::AlignVCenter);
         meta->addWidget(v, r, 1, Qt::AlignLeft | Qt::AlignVCenter);
     };
-    // Author, linked to the GitHub profile (accent link colour via QPalette::Link).
-    auto* author = new QLabel(
-        QStringLiteral("<a href=\"%1\">Hunlongyu ↗</a>").arg(update::ownerUrl()));
-    author->setTextFormat(Qt::RichText);
-    author->setOpenExternalLinks(true);
+    // Author → GitHub profile. A plain QLabel link is unreliable in hopy's
+    // never-activated window, so use a clickable button with the exact same
+    // clicked -> openUrl mechanism as the GitHub button below, styled as a link.
+    auto* author = new QToolButton();
+    author->setText(QStringLiteral("Hunlongyu ↗"));
+    author->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    author->setObjectName("AuthorLink");
+    author->setAutoRaise(true);
+    author->setCursor(Qt::PointingHandCursor);
+    author->setFocusPolicy(Qt::NoFocus);
+    connect(author, &QToolButton::clicked, this,
+            [] { QDesktopServices::openUrl(QUrl(update::ownerUrl())); });
     addMeta(0, T("Author"), author);
     addMeta(1, T("Tech"), new QLabel(QStringLiteral("Qt 6 · SQLite")));
     addMeta(2, T("License"), new QLabel(QStringLiteral("MIT License")));

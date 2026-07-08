@@ -53,6 +53,8 @@ QKeySequenceEdit QLineEdit { background: #3c3c3c; }
 #CardTitle { color: #888888; font-size: 12px; }
 #AboutMuted { color: #888888; font-size: 12px; }
 #VersionPill { color: #9db0ff; background: rgba(107,140,255,0.16); border-radius: 9px; padding: 1px 8px; font-size: 11px; }
+#AuthorLink { border: none; background: transparent; padding: 0; color: #8ea6ff; font-size: 13px; }
+#AuthorLink:hover { color: #b3c4ff; }
 #HelpGroup { color: #9aa0a6; font-size: 12px; font-weight: 600; padding-top: 6px; }
 #PreviewInfo { color: #888888; font-size: 11px; }
 #RowDivider { background: rgba(255, 255, 255, 0.06); border: none; }
