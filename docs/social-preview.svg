@@ -5,7 +5,7 @@
   <!-- Wordmark + tagline -->
   <text x="78" y="252" font-size="150" font-weight="800" fill="#ffffff" letter-spacing="-4">hopy</text>
   <rect x="84" y="286" width="132" height="7" rx="3" fill="#6b8cff"/>
-  <text x="86" y="360" font-size="38" font-weight="600" fill="#d4dbea">插入符跟随 · 永不抢焦点 · 精准回贴</text>
+  <text x="86" y="360" font-size="38" font-weight="600" fill="#d4dbea">插入符跟随 · 窗口弹在你的光标处</text>
   <text x="86" y="408" font-size="25" fill="#8b93a3">轻量剪贴板管理器 · Qt 6 + SQLite · Windows 单文件</text>
 
   <!-- Feature chips -->

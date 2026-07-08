@@ -2,7 +2,7 @@
 
 # hopy
 
-**Lightweight · Windows clipboard manager** — the window pops up right at your text caret, never steals focus, and pastes back exactly where you were.
+**Lightweight · Windows clipboard manager** — the window pops up right at the text caret where you're typing, so your history is where your eyes already are and paste lands precisely in place.
 
 [简体中文](README.md) · **English**
 
@@ -19,7 +19,7 @@
 
 ## ✨ Highlights
 
-- **🎯 Caret-following · never steals focus** — The window opens right at the **text caret** in your editor and never grabs focus, so the original caret stays alive and paste-back lands exactly where you left off.
+- **🎯 Caret-following** — The window opens right at the **text caret** where you're typing (not at the mouse or a screen corner), so your history is exactly where your eyes already are and paste lands precisely on the original caret.
 - **🌈 Color-value cards** — Detects `#hex` (3/4/6/8-digit), `rgb()` / `rgba()`, and bare hex, and draws the swatch inline at the start of the row.
 - **🔗 Content-aware open** — For URLs / emails / file paths, one key or click opens them in the browser / mail client / file manager.
 - **🔒 Sensitive masking** — Content the OS flags as sensitive (e.g. copied from a password manager) is masked in both the list and the preview.
