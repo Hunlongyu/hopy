@@ -15,8 +15,14 @@ QSettings runKey() {
 } // namespace
 bool setAutostart(bool enabled) {
     QSettings k = runKey();
-    if (enabled) k.setValue("hopy", QDir::toNativeSeparators(QCoreApplication::applicationFilePath()));
-    else k.remove("hopy");
+    if (enabled) {
+        // Quote the path so a "Program Files"-style path with spaces still launches
+        // (and stays correct if a launch argument is ever added later).
+        const QString exe = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+        k.setValue("hopy", QStringLiteral("\"%1\"").arg(exe));
+    } else {
+        k.remove("hopy");
+    }
     return true;
 }
 bool isAutostartEnabled() { return runKey().contains("hopy"); }

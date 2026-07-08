@@ -66,6 +66,12 @@ void Application::start() {
         Settings::save(settings_);
         window_->setSettings(settings_);   // keep the Settings-panel toggle in sync
     });
+    // Self-heal the OS autostart entry on launch. When enabled, re-assert it so the
+    // Run key always points at the CURRENT exe path — an update or a moved folder
+    // would otherwise leave a stale, silently-broken path. When disabled, clear any
+    // stray entry so the stored setting stays the source of truth.
+    if (settings_.autostart) platform::setAutostart(true);
+    else if (platform::isAutostartEnabled()) platform::setAutostart(false);
     tray_->setAutostart(settings_.autostart);
     hotkey_ = new GlobalHotkey(this);
 
