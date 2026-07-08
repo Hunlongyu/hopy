@@ -108,7 +108,7 @@ private:
     bool hoverPreview_ = true;
     bool spacePreview_ = true;
     bool previewLeft_ = true;
-    bool followCursor_ = true;   // window placement: follow cursor vs screen centre
+    bool fallbackToCenter_ = false;  // when no caret is found: false → mouse, true → screen centre
     bool searchMode_ = false;    // "/" pressed → subsequent keys type into the search box
     QElapsedTimer showTimer_;    // debounce the foreground-change auto-hide right after showing
     platform::InputHook* inputHook_ = nullptr;

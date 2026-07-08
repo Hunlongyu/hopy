@@ -63,12 +63,36 @@ bool uiaCaretFromRange(IUIAutomationTextRange* rng, RECT& out) {
         c->Release();
         if (cok) { out = RECT{ cr.left, cr.top, cr.left + 2, cr.bottom }; return true; }
     }
+    // Last resort: at the end of a document / on an empty line, character expansion
+    // yields no rect. Expand to the whole enclosing line and take its END edge as
+    // the caret (an empty line collapses to a single point). Mirrors InputTip.
+    if (SUCCEEDED(rng->Clone(&c)) && c) {
+        c->ExpandToEnclosingUnit(TextUnit_Line);
+        RECT lr{};
+        const bool lok = uiaRangeRect(c, lr);
+        c->Release();
+        if (lok) { out = RECT{ lr.right, lr.top, lr.right + 2, lr.bottom }; return true; }
+    }
     return false;
 }
 
 bool caretRectViaUIA(RECT& out) {
     IUIAutomation* uia = g_uiaKeepAlive;   // reuse the startup instance — no per-call CoCreateInstance
     if (!uia) return false;
+    // Batch the focused element AND its text patterns into ONE cross-process round
+    // trip via a cache request, rather than GetFocusedElement + separate
+    // GetCurrentPatternAs calls (each its own round trip). Cuts hotkey-path latency
+    // and the "tree not ready" jitter. Falls back to the uncached calls if the
+    // request can't be built (getPat picks cached vs current accordingly).
+    IUIAutomationCacheRequest* cache = nullptr;
+    if (SUCCEEDED(uia->CreateCacheRequest(&cache)) && cache) {
+        cache->AddPattern(UIA_TextPatternId);
+        cache->AddPattern(UIA_TextPattern2Id);
+    }
+    auto getPat = [&](IUIAutomationElement* e, PATTERNID id, REFIID iid, void** ppv) -> HRESULT {
+        return cache ? e->GetCachedPatternAs(id, iid, ppv)
+                     : e->GetCurrentPatternAs(id, iid, ppv);
+    };
     bool ok = false;
     // Acquire a focused element that exposes TextPattern. CEF/Chromium apps
     // (DingTalk / Feishu docs) initially hand back only the outer Chromium widget
@@ -80,9 +104,11 @@ bool caretRectViaUIA(RECT& out) {
     IUIAutomationTextPattern* tp = nullptr;
     for (int attempt = 0; attempt < 4; ++attempt) {
         if (el) { el->Release(); el = nullptr; }
-        if (FAILED(uia->GetFocusedElement(&el)) || !el) break;
-        if (SUCCEEDED(el->GetCurrentPatternAs(UIA_TextPatternId, __uuidof(IUIAutomationTextPattern),
-                                              reinterpret_cast<void**>(&tp))) && tp)
+        const HRESULT hr = cache ? uia->GetFocusedElementBuildCache(cache, &el)
+                                 : uia->GetFocusedElement(&el);
+        if (FAILED(hr) || !el) break;
+        if (SUCCEEDED(getPat(el, UIA_TextPatternId, __uuidof(IUIAutomationTextPattern),
+                             reinterpret_cast<void**>(&tp))) && tp)
             break;                                   // got a text element
         UIA_HWND h = nullptr;
         el->get_CurrentNativeWindowHandle(&h);
@@ -97,7 +123,7 @@ bool caretRectViaUIA(RECT& out) {
     if (el && tp) {
         // (a) TextPattern2::GetCaretRange — the most direct, cleanest caret.
         IUIAutomationTextPattern2* tp2 = nullptr;
-        if (SUCCEEDED(el->GetCurrentPatternAs(UIA_TextPattern2Id,
+        if (SUCCEEDED(getPat(el, UIA_TextPattern2Id,
                 __uuidof(IUIAutomationTextPattern2), reinterpret_cast<void**>(&tp2))) && tp2) {
             BOOL activeEnd = FALSE;
             IUIAutomationTextRange* caretRange = nullptr;
@@ -124,35 +150,39 @@ bool caretRectViaUIA(RECT& out) {
     }
     if (tp) tp->Release();
     if (el) el->Release();
+    if (cache) cache->Release();
     return ok;
 }
 
-// Lowest-priority fallback: the focused element's top-left (the caret sits at the
-// text start of an empty control). Only used when no method found a real caret.
-bool caretRectViaFocusedElement(RECT& out) {
-    IUIAutomation* uia = g_uiaKeepAlive;   // reuse the startup instance
+// WPF apps expose a dedicated UIA element whose ClassName is "WpfCaret"; its
+// bounding rectangle IS the caret. Reachable even when the generic TextPattern
+// above yields nothing — common in WPF text controls and Visual Studio dialogs.
+bool caretRectViaWpfCaret(RECT& out) {
+    IUIAutomation* uia = g_uiaKeepAlive;
     if (!uia) return false;
-    bool ok = false;
     IUIAutomationElement* el = nullptr;
-    if (SUCCEEDED(uia->GetFocusedElement(&el)) && el) {
-        RECT er{};
-        if (SUCCEEDED(el->get_CurrentBoundingRectangle(&er)) &&
-            er.right > er.left && er.bottom > er.top) {
-            // Only trust the element top-left when it is input-box-sized. A huge
-            // element is a container / embedded Chromium widget (CEF apps like
-            // DingTalk docs) whose corner is nowhere near the caret — in that
-            // case return false so the caller falls back to the mouse instead.
-            HWND fg = GetForegroundWindow();
-            RECT wr{};
-            const int elH = er.bottom - er.top;
-            const int wH = (fg && GetWindowRect(fg, &wr)) ? (wr.bottom - wr.top) : 100000;
-            if (elH <= 400 && elH < wH * 3 / 5) {
-                out = RECT{ er.left, er.top, er.left + 2, er.top + 24 };
+    if (FAILED(uia->GetFocusedElement(&el)) || !el) return false;
+    bool ok = false;
+    VARIANT v;
+    VariantInit(&v);
+    v.vt = VT_BSTR;
+    v.bstrVal = SysAllocString(L"WpfCaret");
+    IUIAutomationCondition* cond = nullptr;
+    if (v.bstrVal &&
+        SUCCEEDED(uia->CreatePropertyCondition(UIA_ClassNamePropertyId, v, &cond)) && cond) {
+        IUIAutomationElement* caret = nullptr;
+        if (SUCCEEDED(el->FindFirst(TreeScope_Descendants, cond, &caret)) && caret) {
+            RECT r{};
+            if (SUCCEEDED(caret->get_CurrentBoundingRectangle(&r)) && r.bottom > r.top) {
+                out = r;
                 ok = true;
             }
+            caret->Release();
         }
-        el->Release();
+        cond->Release();
     }
+    VariantClear(&v);
+    el->Release();
     return ok;
 }
 
@@ -184,6 +214,13 @@ bool caretRectViaAttachedThread(RECT& out) {
     if (!AttachThreadInput(self, fgThread, TRUE)) return false;
     POINT pt{};
     HWND focus = GetFocus();                 // the caret-owning window in that thread
+    // Some controls only recompute their caret on an IME composition tick — poke
+    // them once before reading so GetCaretPos returns a fresh position rather than
+    // a stale one (InputTip's refresh trick). Harmless where the message is ignored.
+    if (focus) {
+        DWORD_PTR r = 0;
+        SendMessageTimeoutW(focus, WM_IME_COMPOSITION, 0, 0, SMTO_ABORTIFHUNG, 30, &r);
+    }
     const bool got = focus && GetCaretPos(&pt);
     // Reject the dummy caret many apps (Chromium, WinUI) park at the client origin
     // — must be checked BEFORE ClientToScreen, or it becomes a valid-looking corner.
@@ -307,12 +344,12 @@ bool queryCaret(CaretInfo& out) {
     // they don't apply.
     RECT rc{};
     if (!((caretRectViaUIA(rc)            && valid(rc)) ||   // TextPattern2 / selection (+ CEF a11y)
+          (caretRectViaWpfCaret(rc)       && valid(rc)) ||   // WPF "WpfCaret" element
           (caretRectViaGuiThread(rc)      && valid(rc)) ||   // classic Win32 caret
-          (caretRectViaAttachedThread(rc) && valid(rc)) ||   // attached-thread GetCaretPos
+          (caretRectViaAttachedThread(rc) && valid(rc)) ||   // attached-thread GetCaretPos (+ IME nudge)
           (caretRectViaMSAA(rc)           && valid(rc)) ||   // MSAA OBJID_CARET
-          (caretRectViaIME(rc)            && valid(rc)) ||   // IME composition/candidate point
-          (caretRectViaFocusedElement(rc) && valid(rc))))    // rough element top-left fallback
-        return false;
+          (caretRectViaIME(rc)            && valid(rc))))     // IME composition/candidate point
+        return false;   // no real caret found → caller anchors the panel at the mouse instead
     out.caret = QRect(QPoint(rc.left, rc.top), QPoint(rc.right, rc.bottom));
     return true;
 }

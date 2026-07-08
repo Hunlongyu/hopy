@@ -183,7 +183,7 @@ void MainWindow::setSettings(const AppSettings& s) {
     hoverPreview_ = s.hoverPreview;
     spacePreview_ = s.spacePreview;
     previewLeft_ = (s.previewSide != "right");
-    followCursor_ = (s.windowPlacement != "center");
+    fallbackToCenter_ = (s.windowPlacement == "center");
     if (model_) model_->setMaskSensitive(s.maskSensitive);
     if (preview_) preview_->setMaskSensitive(s.maskSensitive);
 
@@ -409,12 +409,19 @@ void MainWindow::showAtCursor() {
     stack_->setCurrentIndex(0);          // always open on the list page
     QList<QRect> geoms;
     for (QScreen* s : QGuiApplication::screens()) geoms << s->geometry();
-    const auto mode = followCursor_ ? WindowPlacement::Cursor : WindowPlacement::Center;
-    // We never steal focus, so the editor still owns a live caret — read it now.
-    // It is reliable every time (no post-paste settling), falling back to the
-    // mouse only for genuinely caret-less contexts.
+    // The panel ALWAYS aims for the caret first — we never steal focus, so the
+    // editor still owns a live caret we can read now (reliable every time, no
+    // post-paste settling). Only when no caret can be found do we fall back to the
+    // position the user chose: the mouse, or the centre of the screen.
     QPoint anchor;
-    if (!(followCursor_ && caretAnchorLogical(anchor))) anchor = QCursor::pos();
+    WindowPlacement mode;
+    if (caretAnchorLogical(anchor)) {
+        mode = WindowPlacement::Cursor;          // drop the panel just below the caret
+    } else {
+        anchor = QCursor::pos();
+        mode = fallbackToCenter_ ? WindowPlacement::Center    // centre on the monitor under the mouse
+                                 : WindowPlacement::Cursor;   // open at the mouse, Win+V style
+    }
     setGeometry(placeWindow(anchor, geoms, size(), mode));
     search_->clear();
     setSearchMode(false);

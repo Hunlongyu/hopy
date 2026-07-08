@@ -10,10 +10,10 @@ struct CaretInfo {
 };
 
 // Find the caret of the foreground window. Tries, in order: UI Automation
-// (TextPattern2 / selection), the classic Win32 caret, AttachThreadInput +
-// GetCaretPos, MSAA OBJID_CARET, the IME composition point, and finally the
-// focused element's bounds — each result is plausibility-checked. False if none
-// yields a credible caret. Windows-only; a no-op elsewhere.
+// (TextPattern2 / selection), the WPF "WpfCaret" element, the classic Win32 caret,
+// AttachThreadInput + GetCaretPos, MSAA OBJID_CARET, and the IME composition point
+// — each result is plausibility-checked. False if none yields a credible caret, in
+// which case the caller anchors at the mouse. Windows-only; a no-op elsewhere.
 bool queryCaret(CaretInfo& out);
 
 // Register hopy as an assistive-technology client so CEF/Chromium apps build
