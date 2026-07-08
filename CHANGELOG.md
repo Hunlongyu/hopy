@@ -4,6 +4,20 @@ All notable changes to hopy are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-07-08
+
+### Fixed
+- **Autostart**: self-heal the OS "run at login" entry on launch — when enabled it
+  is re-asserted so it always points at the current executable (surviving updates
+  and moved folders), and a stray entry is cleared when disabled. The path is now
+  quoted so a location with spaces still launches.
+
+### Internal
+- **CI**: `build-windows` now triggers only on `v*` tags, so a release commit no
+  longer double-builds (once for the branch push, once for the tag).
+- **CI**: releases take their notes from the matching `CHANGELOG.md` section
+  instead of GitHub's auto-generated notes.
+
 ## [0.4.0] - 2026-07-08
 
 ### Added
@@ -51,5 +65,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Internal
 - Self-hosted release workflow that builds, checksums, and publishes on a `v*` tag.
 
+[0.4.1]: https://github.com/Hunlongyu/hopy/releases/tag/v0.4.1
 [0.4.0]: https://github.com/Hunlongyu/hopy/releases/tag/v0.4.0
 [0.3.0]: https://github.com/Hunlongyu/hopy/releases/tag/v0.3.0
