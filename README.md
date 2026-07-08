@@ -4,6 +4,8 @@
 
 **轻量 · 跨平台剪贴板管理器** — 窗口在文本光标处弹出，永不抢焦点，回贴精准落回原位。
 
+**简体中文** · [English](README-en.md)
+
 <a href="https://github.com/Hunlongyu/hopy/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/Hunlongyu/hopy?style=flat-square&color=6b8cff&label=release"></a>
 <a href="https://github.com/Hunlongyu/hopy/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/Hunlongyu/hopy/total?style=flat-square&color=6b8cff"></a>
 <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Hunlongyu/hopy?style=flat-square&color=6b8cff"></a>
