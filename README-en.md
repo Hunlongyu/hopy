@@ -2,7 +2,7 @@
 
 # hopy
 
-**Lightweight · cross-platform clipboard manager** — the window pops up right at your text caret, never steals focus, and pastes back exactly where you were.
+**Lightweight · Windows clipboard manager** — the window pops up right at your text caret, never steals focus, and pastes back exactly where you were.
 
 [简体中文](README.md) · **English**
 
@@ -68,7 +68,7 @@ Output: `build/win-static-release/hopy.exe`.
 
 ## 🧱 Tech stack
 
-Qt 6 Widgets (custom-drawn cards · QSS themes) · SQLite persistence · a platform layer (global hotkey / low-level input hook / caret probing / foreground paste-back) · CMake + Ninja. Designed to be cross-platform; currently statically linked on Windows / MSVC 2026 x64.
+Qt 6 Widgets (custom-drawn cards · QSS themes) · SQLite persistence · a platform layer (global hotkey / low-level input hook / caret probing / foreground paste-back) · CMake + Ninja. Statically linked on Windows / MSVC 2026 x64.
 
 ## 📄 License
 

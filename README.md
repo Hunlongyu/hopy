@@ -2,7 +2,7 @@
 
 # hopy
 
-**轻量 · 跨平台剪贴板管理器** — 窗口在文本光标处弹出，永不抢焦点，回贴精准落回原位。
+**轻量 · Windows 剪贴板管理器** — 窗口在文本光标处弹出，永不抢焦点，回贴精准落回原位。
 
 **简体中文** · [English](README-en.md)
 
@@ -68,7 +68,7 @@ ctest --preset win-static-release
 
 ## 🧱 技术栈
 
-Qt 6 Widgets（自绘卡片 · QSS 主题）· SQLite 持久化 · 平台层（全局热键 / 低级输入钩子 / 插入符探测 / 前台回贴）· CMake + Ninja。面向跨平台设计，当前在 Windows / MSVC 2026 x64 静态链接。
+Qt 6 Widgets（自绘卡片 · QSS 主题）· SQLite 持久化 · 平台层（全局热键 / 低级输入钩子 / 插入符探测 / 前台回贴）· CMake + Ninja。当前在 Windows / MSVC 2026 x64 下静态链接。
 
 ## 📄 许可
 
