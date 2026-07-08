@@ -185,12 +185,20 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
     scroll_->verticalScrollBar()->setValue(0);
     updateScrollPercent();   // reset the indicator for the new content (0% or blank if it fits)
 
-    // Fixed side (left by default), right edge adjacent to the main window's
-    // left edge (or left edge adjacent to its right edge). Top-aligned.
+    // Two candidate positions — beside the main window on the LEFT or the RIGHT.
+    // Use the preferred side (leftSide) when it fits on screen; otherwise flip to
+    // the opposite side instead of clamping on top of the main window. Only fall
+    // back to clamping when neither side can hold it (very small screen).
     const int gap = 6;
-    int x = leftSide ? anchor.left() - gap - w : anchor.right() + gap;
-    x = qBound(sg.left(), x, sg.right() - w);
-    int y = qBound(sg.top(), anchor.top(), sg.bottom() - h);
+    const int xLeft  = anchor.left()  - gap - w;   // preview sits left of the window
+    const int xRight = anchor.right() + gap;        // preview sits right of the window
+    const bool leftFits  = xLeft  >= sg.left();
+    const bool rightFits = xRight + w <= sg.right();
+    bool useLeft = leftSide;
+    if ( leftSide && !leftFits  && rightFits) useLeft = false;   // preferred left won't fit, right will
+    if (!leftSide && !rightFits && leftFits ) useLeft = true;    // preferred right won't fit, left will
+    const int x = qBound(sg.left(), useLeft ? xLeft : xRight, sg.right() - w);
+    const int y = qBound(sg.top(), anchor.top(), sg.bottom() - h);
     move(x, y);
     show();
     raise();
