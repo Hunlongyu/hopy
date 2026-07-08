@@ -32,6 +32,7 @@
 #include <QWindow>
 #include <QGraphicsDropShadowEffect>
 #include <QAbstractButton>
+#include <QToolTip>
 #include <QComboBox>
 #include <QAbstractSlider>
 #include <QSpinBox>
@@ -129,6 +130,7 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
         if (hoverPreview_ && hoverRow_ >= 0 && isVisible()) showPreviewRow(hoverRow_);
     });
     list_->setMouseTracking(true);
+    list_->viewport()->setMouseTracking(true);   // deliver MouseMove for action-icon tooltip hit-testing
     connect(list_, &QListView::entered, this, [this](const QModelIndex& i) {
         hoverRow_ = i.row();
         if (hoverPreview_) hoverTimer_->start();
@@ -369,6 +371,19 @@ QWidget* MainWindow::buildSearchFilterRow() {
     ff->addWidget(btnFav_);
     h->addWidget(favFrame);
 
+    // Qt's automatic hover tooltips don't fire in this never-activated window, so
+    // drive them ourselves: hover-in arms a delay timer that pops the widget's
+    // tooltip; hover-out cancels it and hides any shown tip.
+    tipTimer_ = new QTimer(this);
+    tipTimer_->setSingleShot(true);
+    tipTimer_->setInterval(500);
+    connect(tipTimer_, &QTimer::timeout, this, [this] {
+        if (tipWidget_ && tipWidget_->underMouse() && !tipText_.isEmpty())
+            QToolTip::showText(QCursor::pos(), tipText_, tipWidget_);
+    });
+    for (QToolButton* b : { helpBtn_, setBtn_, aaBtn_, wwBtn_, btnText_, btnImage_, btnFiles_, btnFav_ })
+        b->installEventFilter(this);
+
     connect(btnText_,  &QToolButton::clicked, this, [this] {
         setFilter(filter_ == ContentFilter::Text ? ContentFilter::All : ContentFilter::Text); });
     connect(btnImage_, &QToolButton::clicked, this, [this] {
@@ -516,26 +531,70 @@ bool MainWindow::handleNavKey(QKeyEvent* ev) {
     return false;
 }
 
+void MainWindow::armTip(QWidget* owner, const QString& text) {
+    if (owner == tipWidget_ && text == tipText_) return;   // unchanged → leave the pending/shown tip
+    tipTimer_->stop();
+    QToolTip::hideText();
+    tipWidget_ = owner;
+    tipText_ = text;
+    if (owner && !text.isEmpty()) tipTimer_->start();
+}
+
+void MainWindow::clearTip() {
+    if (!tipWidget_ && tipText_.isEmpty()) return;
+    tipTimer_->stop();
+    QToolTip::hideText();
+    tipWidget_ = nullptr;
+    tipText_.clear();
+}
+
 bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
+    // The toolbar-button filters are installed before list_ exists (buildListPage
+    // creates list_ after the header row), so guard against a null list_ here —
+    // dereferencing it for an early construction-time event crashes at 0x8.
+    QWidget* vp = list_ ? list_->viewport() : nullptr;
+
+    // Manual tooltips (Qt's auto tooltip doesn't fire in this never-activated
+    // window). Toolbar buttons arm on hover-in; the list's per-item action icons
+    // are delegate-painted (not widgets), so we hit-test them on mouse-move.
+    if (ev->type() == QEvent::Enter) {
+        if (auto* w = qobject_cast<QWidget*>(obj); w && !w->toolTip().isEmpty())
+            armTip(w, w->toolTip());
+    } else if (ev->type() == QEvent::Leave && obj == tipWidget_ && obj != vp) {
+        clearTip();
+    }
+
     // Keys are posted straight to MainWindow by the input hook (this window never
     // holds OS focus), so search_/list_ never see a KeyPress here — only mouse.
     // (Side buttons M4/M5 are captured by the input hook for preview scrolling, so
     // they never surface as Qt mouse events here.)
-    if (ev->type() == QEvent::MouseButtonRelease && obj == list_->viewport()) {
-        auto* me = static_cast<QMouseEvent*>(ev);
-        if (openMouseButton_ != Qt::NoButton && me->button() == openMouseButton_) {
+    if (vp && obj == vp) {
+        if (ev->type() == QEvent::MouseMove) {
+            auto* me = static_cast<QMouseEvent*>(ev);
             const QModelIndex ix = list_->indexAt(me->pos());
-            if (ix.isValid()) {
-                if (const ClipboardRecord* r = model_->recordAt(ix.row())) {
-                    emit openRequested(r->id);
-                    return true;   // consume; QListView has no context menu to suppress
+            const int slot = ix.isValid()
+                ? RecordDelegate::actionSlotAt(list_->visualRect(ix), me->pos()) : -1;
+            if (slot >= 0)
+                armTip(vp, slot == 0 ? T("Favorite")
+                         : slot == 1 ? T("Pin to top") : T("Delete"));
+            else if (tipWidget_ == vp)
+                clearTip();
+        } else if (ev->type() == QEvent::MouseButtonRelease) {
+            auto* me = static_cast<QMouseEvent*>(ev);
+            if (openMouseButton_ != Qt::NoButton && me->button() == openMouseButton_) {
+                const QModelIndex ix = list_->indexAt(me->pos());
+                if (ix.isValid()) {
+                    if (const ClipboardRecord* r = model_->recordAt(ix.row())) {
+                        emit openRequested(r->id);
+                        return true;   // consume; QListView has no context menu to suppress
+                    }
                 }
             }
+        } else if (ev->type() == QEvent::Leave) {
+            hoverRow_ = -1;
+            hidePreview();
+            clearTip();
         }
-    }
-    if (ev->type() == QEvent::Leave && obj == list_->viewport()) {
-        hoverRow_ = -1;
-        hidePreview();
     }
     return QWidget::eventFilter(obj, ev);
 }

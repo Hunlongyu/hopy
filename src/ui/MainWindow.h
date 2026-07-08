@@ -60,6 +60,8 @@ private:
     QWidget* buildSearchFilterRow();
     void buildPanels();          // create + wire the settings & help panels
     void retranslateTips();      // refresh header / filter / search tooltips
+    void armTip(QWidget* owner, const QString& text);   // schedule a manual tooltip
+    void clearTip();                                    // cancel + hide the manual tooltip
     void showList();
     void showSettings();
     void showHelp();
@@ -101,6 +103,9 @@ private:
 
     PreviewPopup* preview_ = nullptr;
     QTimer* hoverTimer_ = nullptr;
+    QTimer* tipTimer_ = nullptr;          // delayed manual tooltip (Qt's auto one doesn't fire here)
+    QWidget* tipWidget_ = nullptr;        // owner widget the tooltip is anchored to
+    QString tipText_;                     // text of the pending / shown manual tooltip
     QTimer* sideScrollTimer_ = nullptr;   // ~60fps momentum ticker for M4/M5 preview scrolling
     double sideVel_ = 0.0;                // scroll velocity px/frame (+ down / - up); decays each frame
     double sideAccum_ = 0.0;             // sub-pixel carry so slow glides still move

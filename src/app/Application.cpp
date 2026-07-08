@@ -38,6 +38,10 @@ void Application::start() {
     settings_ = Settings::load();
     setLanguage(settings_.language);   // apply the saved language before any UI is built
     applyTheme(settings_.theme);
+    // Tooltips appear instantly — the OS fade/slide effect looks inconsistent when
+    // our manually-driven toolbar tips re-show while moving between buttons.
+    QApplication::setEffectEnabled(Qt::UI_FadeTooltip, false);
+    QApplication::setEffectEnabled(Qt::UI_AnimateTooltip, false);
     platform::enableUiaAccessibility();   // pose as AT client so CEF editors expose their caret
 
     paths::ensureDir(paths::dataDir());   // SQLite can't create the db file if the dir is missing

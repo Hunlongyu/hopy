@@ -18,6 +18,9 @@ const QHash<QByteArray, QString>& zh() {
         {"Image",           QStringLiteral("图片")},
         {"Files",           QStringLiteral("文件")},
         {"Favorites only",  QStringLiteral("仅收藏")},
+        {"Favorite",        QStringLiteral("收藏")},
+        {"Pin to top",      QStringLiteral("置顶")},
+        {"Delete",          QStringLiteral("删除")},
         {"All",             QStringLiteral("全部")},
         // Preview
         {"(image missing)", QStringLiteral("（图片缺失）")},
