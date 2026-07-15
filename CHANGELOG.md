@@ -4,6 +4,32 @@ All notable changes to hopy are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] - 2026-07-15
+
+### Added
+- **Tray**: the hover tooltip now shows the running version on a third line.
+- **Preview**: `Ctrl` + mouse wheel scrolls the open preview (in addition to the
+  existing side-button momentum scrolling).
+
+### Changed
+- **Preview**: text and file previews now use a virtualised text view, so a large
+  paste (e.g. a 1000+ line file) shows its full content and scrolls all the way to
+  the end — the previous 8000-character cap is gone.
+
+### Fixed
+- **Tray**: the **Settings** item now opens the Settings page instead of the
+  clipboard list.
+- **Tray**: the **Pause monitoring** and **Launch at startup** items now show their
+  on/off state at a glance (an accent-coloured icon plus a trailing check mark), so
+  it is obvious whether each is enabled.
+- **Colours**: only short entries are detected as colour swatches — a long paste that
+  merely contains colour values (such as a code file) no longer renders as a colour.
+
+### Internal
+- **CI**: fixed a stale `test_settings` assertion (the default theme is `auto` /
+  follow-system, not `dark`) that was failing `ctest` and blocking every tagged
+  release.
+
 ## [0.4.1] - 2026-07-08
 
 ### Fixed
@@ -65,6 +91,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Internal
 - Self-hosted release workflow that builds, checksums, and publishes on a `v*` tag.
 
+[0.4.5]: https://github.com/Hunlongyu/hopy/releases/tag/v0.4.5
 [0.4.1]: https://github.com/Hunlongyu/hopy/releases/tag/v0.4.1
 [0.4.0]: https://github.com/Hunlongyu/hopy/releases/tag/v0.4.0
 [0.3.0]: https://github.com/Hunlongyu/hopy/releases/tag/v0.3.0
