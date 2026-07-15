@@ -1,6 +1,7 @@
 #include "ui/TrayIcon.h"
 #include "util/I18n.h"
 #include "util/Icons.h"
+#include "util/Version.h"
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QAction>
@@ -90,7 +91,7 @@ TrayIcon::TrayIcon(QObject* parent) : QObject(parent) {
 
     rebuildIcons();
     tray_->setContextMenu(menu_);
-    tray_->setToolTip(QStringLiteral("Hopy\n") + T("Clipboard manager"));
+    applyToolTip();
     tray_->show();
 }
 
@@ -117,6 +118,12 @@ void TrayIcon::syncToggle(QAction* act, const QString& iconName, const char* bas
 
 void TrayIcon::applyTheme() { rebuildIcons(); }
 
+void TrayIcon::applyToolTip() {
+    // Name, description, then the running version on a third line.
+    tray_->setToolTip(QStringLiteral("Hopy\n") + T("Clipboard manager") +
+                      QStringLiteral("\n") + T("Version %1").arg(currentVersion()));
+}
+
 void TrayIcon::retranslate() {
     showAct_->setText(T("Show main window"));
     checkAct_->setText(T("Check for updates"));
@@ -124,7 +131,7 @@ void TrayIcon::retranslate() {
     syncToggle(pauseAct_, QStringLiteral("pause"), "Pause monitoring");           // keep the ✓ across a language switch
     syncToggle(autostartAct_, QStringLiteral("power"), "Launch at startup");
     quitAct_->setText(T("Quit"));
-    tray_->setToolTip(QStringLiteral("Hopy\n") + T("Clipboard manager"));
+    applyToolTip();
 }
 
 void TrayIcon::setPaused(bool on) {

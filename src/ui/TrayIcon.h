@@ -24,6 +24,7 @@ signals:
 private:
     void rebuildIcons();            // (re)assign palette-tinted icons to every action
     void syncToggle(QAction* act, const QString& iconName, const char* baseText);   // reflect a checkable row's on/off state (accent icon + trailing ✓)
+    void applyToolTip();            // hover tooltip: name · description · version (3 lines)
     QSystemTrayIcon* tray_ = nullptr;
     QMenu* menu_ = nullptr;
     QAction* showAct_ = nullptr;
