@@ -147,7 +147,10 @@ void Application::start() {
             });
         }
     });
-    connect(tray_, &TrayIcon::settingsRequested, this, &Application::showWindow);
+    connect(tray_, &TrayIcon::settingsRequested, this, [this] {
+        refreshWindow();
+        window_->openSettings();   // reveal on the settings page, not the clipboard list
+    });
     connect(window_, &MainWindow::clearAllRequested, this, [this] {
         repo_->clear();                                   // DELETE + VACUUM (file shrinks)
         QDir(paths::imagesDir()).removeRecursively();     // drop image sidecars

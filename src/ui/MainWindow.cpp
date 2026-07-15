@@ -26,6 +26,7 @@
 #include <QFrame>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QWheelEvent>
 #include <QGuiApplication>
 #include <QScreen>
 #include <QCursor>
@@ -450,6 +451,11 @@ void MainWindow::showAtCursor() {
     inputHook_->start(this);             // route keyboard here while visible
 }
 
+void MainWindow::openSettings() {
+    showAtCursor();     // position + reveal (showAtCursor always opens on the list page)
+    showSettings();     // then flip to the settings page
+}
+
 void MainWindow::moveSelection(int delta) {
     const int n = model_->rowCount();
     if (n == 0) return;
@@ -591,6 +597,14 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
                         return true;   // consume; QListView has no context menu to suppress
                     }
                 }
+            }
+        } else if (ev->type() == QEvent::Wheel) {
+            // Ctrl + wheel scrolls the open preview (like the M4/M5 side buttons)
+            // instead of scrolling the list.
+            auto* we = static_cast<QWheelEvent*>(ev);
+            if ((we->modifiers() & Qt::ControlModifier) && preview_ && preview_->isVisible()) {
+                preview_->scrollByPixels(-we->angleDelta().y());
+                return true;
             }
         } else if (ev->type() == QEvent::Leave) {
             hoverRow_ = -1;

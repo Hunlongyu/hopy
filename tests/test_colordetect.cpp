@@ -34,6 +34,20 @@ private slots:
     void ignoresPlainText() {
         QVERIFY(!detectColor("按 git 规范提交代码").isValid());
     }
+    void ignoresLongTextWithColors() {
+        // A whole code file that merely mentions colours must NOT render as a swatch —
+        // only short, colour-ish entries do.
+        const QString code =
+            "int main() {\n"
+            "    const char* accent = \"#ff5500\";  // brand colour\n"
+            "    return 0;\n"
+            "}";
+        QVERIFY(!detectColor(code).isValid());
+    }
+    void stillDetectsShortWithContext() {
+        // A short string with a little context around the colour still counts.
+        QCOMPARE(detectColor("border: 1px solid #ff5500"), QColor(0xff, 0x55, 0x00));
+    }
     void picksEarliest() {
         // rgb appears before the hash-like token
         QCOMPARE(detectColor("use rgb(1,2,3) not #445566"), QColor(1, 2, 3));

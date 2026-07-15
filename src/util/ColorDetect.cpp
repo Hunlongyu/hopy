@@ -24,6 +24,13 @@ QColor fromHex(const QString& h) {
 } // namespace
 
 QColor detectColor(const QString& text) {
+    // Only a SHORT entry counts as a colour. What a user copies as a colour is a short
+    // token ("#ff5500", "rgb(255,85,0)"), maybe with a little CSS around it — never a
+    // whole code file that merely happens to mention a few colours. Cap the length so a
+    // long paste never renders as a swatch (and we skip three regexes on big text).
+    constexpr int kMaxColorTextLen = 32;
+    if (text.size() > kMaxColorTextLen) return {};
+
     static const QRegularExpression rgbRe(
         R"(rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*([0-9]*\.?[0-9]+)\s*)?\))",
         QRegularExpression::CaseInsensitiveOption);

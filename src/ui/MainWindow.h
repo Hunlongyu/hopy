@@ -31,6 +31,7 @@ public:
     void setRecords(const QList<ClipboardRecord>& records);
     void setSettings(const AppSettings& s);
     void showAtCursor();
+    void openSettings();   // reveal the window and switch straight to the settings page (tray "Settings")
     void retranslate();   // rebuild the translated UI after a language change
     void setUpdateBadge(bool on, const QString& tag = QString());   // dot on the gear + reflect on the check button
 

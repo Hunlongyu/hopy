@@ -23,6 +23,7 @@ signals:
     void quitRequested();
 private:
     void rebuildIcons();            // (re)assign palette-tinted icons to every action
+    void syncToggle(QAction* act, const QString& iconName, const char* baseText);   // reflect a checkable row's on/off state (accent icon + trailing ✓)
     QSystemTrayIcon* tray_ = nullptr;
     QMenu* menu_ = nullptr;
     QAction* showAct_ = nullptr;
