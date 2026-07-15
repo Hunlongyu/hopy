@@ -12,9 +12,9 @@ private slots:
         QCOMPARE(r.maxHistory, 50);
         QCOMPARE(r.confirmMode, ConfirmMode::CopyOnly);
     }
-    void invalidThemeFallsBackToDark() {
+    void invalidThemeFallsBackToAuto() {
         AppSettings r = Settings::fromJson(R"({"theme":"solarized"})");
-        QCOMPARE(r.theme, QString("dark"));
+        QCOMPARE(r.theme, QString("auto"));   // default theme is "auto" (follow system)
     }
     void clampsHistory() {
         AppSettings r = Settings::fromJson(R"({"maxHistory": 99999})");
@@ -26,7 +26,7 @@ private slots:
     }
     void emptyJsonYieldsDefaults() {
         AppSettings r = Settings::fromJson("{}");
-        QCOMPARE(r.theme, QString("dark"));
+        QCOMPARE(r.theme, QString("auto"));
         QCOMPARE(r.maxHistory, 100);
     }
     void openDefaultsWhenAbsent() {
