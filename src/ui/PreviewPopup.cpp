@@ -6,7 +6,10 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QScrollArea>
+#include <QPlainTextEdit>
+#include <QAbstractScrollArea>
 #include <QScrollBar>
+#include <QTextDocument>
 #include <QPixmap>
 #include <QScreen>
 #include <QGuiApplication>
@@ -46,6 +49,22 @@ PreviewPopup::PreviewPopup(QWidget* parent) : QWidget(parent) {
     content_->setFont(cf);
     scroll_->setWidget(content_);
 
+    // Text/files preview: a read-only QPlainTextEdit virtualises rendering (only visible
+    // lines are laid out), so it shows arbitrarily large pastes with no length cap and
+    // stays smooth. Images keep the QLabel path above (pixmaps don't belong in a text edit).
+    text_ = new QPlainTextEdit(card);
+    text_->setReadOnly(true);
+    text_->setFrameShape(QFrame::NoFrame);
+    text_->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    text_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    text_->setTextInteractionFlags(Qt::NoTextInteraction);
+    text_->document()->setDocumentMargin(0);
+    text_->setStyleSheet(QStringLiteral("QPlainTextEdit { background: transparent; border: none; }"));
+    text_->viewport()->setStyleSheet(QStringLiteral("background: transparent;"));
+    text_->setFont(cf);   // match the QLabel's 15px preview font
+    text_->setMinimumHeight(0);   // let the popup shrink to fit a 1–2 line preview
+    text_->hide();
+
     info_ = new QLabel(card);
     info_->setObjectName("PreviewInfo");
     info_->setWordWrap(false);
@@ -67,23 +86,28 @@ PreviewPopup::PreviewPopup(QWidget* parent) : QWidget(parent) {
     lay->addLayout(infoRow);         // sits above the scroll area
 
     lay->addWidget(scroll_);
+    lay->addWidget(text_);
 
-    // Live scroll progress from any source (momentum, wheel, keyboard).
-    if (auto* vb = scroll_->verticalScrollBar()) {
-        connect(vb, &QScrollBar::valueChanged, this, [this] { updateScrollPercent(); });
-        connect(vb, &QScrollBar::rangeChanged,  this, [this] { updateScrollPercent(); });
+    // Live scroll progress from any source (momentum, wheel, keyboard) — whichever
+    // viewport is showing drives the "NN%" indicator via active_.
+    for (QAbstractScrollArea* a : {static_cast<QAbstractScrollArea*>(scroll_),
+                                   static_cast<QAbstractScrollArea*>(text_)}) {
+        if (auto* vb = a->verticalScrollBar()) {
+            connect(vb, &QScrollBar::valueChanged, this, [this] { updateScrollPercent(); });
+            connect(vb, &QScrollBar::rangeChanged,  this, [this] { updateScrollPercent(); });
+        }
     }
 }
 
 void PreviewPopup::updateScrollPercent() {
-    auto* vb = scroll_->verticalScrollBar();
+    auto* vb = active_ ? active_->verticalScrollBar() : nullptr;
     const int max = vb ? vb->maximum() : 0;
     if (max <= 0) { pct_->clear(); return; }   // content fits → nothing to scroll
     pct_->setText(QStringLiteral("%1%").arg(qRound(100.0 * vb->value() / max)));
 }
 
 void PreviewPopup::scrollByPixels(int dy) {
-    if (auto* vb = scroll_->verticalScrollBar()) vb->setValue(vb->value() + dy);
+    if (active_) if (auto* vb = active_->verticalScrollBar()) vb->setValue(vb->value() + dy);
 }
 
 void PreviewPopup::setOpenKeysLabel(const QString& label) { openKeysLabel_ = label; }
@@ -161,28 +185,32 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
                 content_->setText(T("(image missing)"));
                 ch = textHeight(content_->text());
             }
+            active_ = scroll_;
+            content_->setFixedSize(cw, qMax(1, ch));   // full image; the scroll area shows a window into it
+            text_->hide(); scroll_->show();
             break;
         }
         case ContentType::Files:
         case ContentType::Text:
         case ContentType::RichText: {
-            content_->setPixmap(QPixmap());
-            QString t = body;
-            if (t.size() > 8000) t = t.left(8000) + QStringLiteral("…");   // capped anyway; keeps it fast
-            content_->setText(t);
-            ch = textHeight(t);
+            active_ = text_;
+            scroll_->hide(); text_->show();
+            text_->setPlainText(body);   // no length cap — QPlainTextEdit lays out only visible lines
+            // Cheap height estimate from the logical line count (no full layout). Wrapped
+            // long lines under-count, but long content caps at maxH and scrolls anyway.
+            const int lineH = QFontMetrics(text_->font()).lineSpacing();
+            ch = text_->document()->blockCount() * lineH + 8;
             break;
         }
     }
 
-    content_->setFixedSize(cw, qMax(1, ch));   // full content; scroll area shows a window into it
     const int w = cw + 24;
-    // Height must budget for the info bar above the scroll area, else it eats
-    // into the content viewport and short text gets clipped to nothing.
+    // Height must budget for the info bar above the viewport, else it eats into the
+    // content area and short text gets clipped to nothing.
     const int infoH = info_->sizeHint().height();
     const int h = qMin(ch + 24 + infoH + 6, maxH);   // +infoH + the 6px layout spacing
     resize(w, h);
-    scroll_->verticalScrollBar()->setValue(0);
+    if (active_) active_->verticalScrollBar()->setValue(0);
     updateScrollPercent();   // reset the indicator for the new content (0% or blank if it fits)
 
     // Two candidate positions — beside the main window on the LEFT or the RIGHT.

@@ -4,6 +4,8 @@
 
 class QLabel;
 class QScrollArea;
+class QPlainTextEdit;
+class QAbstractScrollArea;
 
 namespace hopy {
 
@@ -24,8 +26,10 @@ public:
 private:
     void updateScrollPercent();   // refresh the top-right "NN%" scroll indicator
 
-    QScrollArea* scroll_ = nullptr;
-    QLabel* content_ = nullptr;
+    QScrollArea* scroll_ = nullptr;         // image viewport (tall images scroll)
+    QLabel* content_ = nullptr;             // image pixmap / "(image missing)"
+    QPlainTextEdit* text_ = nullptr;        // text/files preview — virtualised, no length cap
+    QAbstractScrollArea* active_ = nullptr; // whichever of scroll_ / text_ is currently shown
     QLabel* info_ = nullptr;
     QLabel* pct_ = nullptr;        // scroll progress, right of the info bar (blank when content fits)
     QString openKeysLabel_;
