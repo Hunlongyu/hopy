@@ -4,6 +4,14 @@ All notable changes to hopy are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.7] - 2026-07-21
+
+### Fixed
+- **Favorites**: favorite and pinned clipboard records are now always included in
+  the visible history. The configured history limit applies only to ordinary
+  records, so older favorites no longer disappear from the Favorites view after
+  newer clipboard entries are captured.
+
 ## [0.4.6] - 2026-07-21
 
 ### Fixed

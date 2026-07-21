@@ -1,5 +1,6 @@
 #include <QtTest>
 #include <QSqlQuery>
+#include <algorithm>
 #include "storage/Database.h"
 #include "storage/ClipboardRepository.h"
 
@@ -65,6 +66,26 @@ private slots:
         auto old = repo.recentRecords(10).last();
         repo.togglePin(old.id);
         QCOMPARE(repo.recentRecords(10).first().id, old.id);
+    }
+    void recentRecordsAlwaysIncludesPinnedAndFavorite() {
+        Database db = Database::openInMemory(); db.migrate();
+        ClipboardRepository repo(db);
+        auto favorite = repo.saveText("favorite"); QTest::qSleep(2);
+        auto pinned = repo.saveText("pinned");     QTest::qSleep(2);
+        repo.saveText("ordinary old");              QTest::qSleep(2);
+        auto newest = repo.saveText("ordinary new");
+        QVERIFY(repo.toggleFavorite(favorite.id));
+        QVERIFY(repo.togglePin(pinned.id));
+
+        const auto list = repo.recentRecords(1);
+        QCOMPARE(list.size(), 3);
+        QCOMPARE(list[0].id, pinned.id);
+        QVERIFY(std::any_of(list.cbegin(), list.cend(), [favorite](const ClipboardRecord& r) {
+            return r.id == favorite.id;
+        }));
+        QVERIFY(std::any_of(list.cbegin(), list.cend(), [newest](const ClipboardRecord& r) {
+            return r.id == newest.id;
+        }));
     }
     void cleanupPreservesPinnedAndFavorite() {
         Database db = Database::openInMemory(); db.migrate();

@@ -83,7 +83,11 @@ QList<ClipboardRecord> ClipboardRepository::recentRecords(int limit) const {
     QList<ClipboardRecord> out;
     QSqlQuery q(db_.connection());
     q.prepare("SELECT id,content,type,created_at,pinned,favorite,html_path,rtf_path,image_path,sensitive"
-              " FROM records ORDER BY pinned DESC, created_at DESC LIMIT ?");
+              " FROM records"
+              " WHERE pinned=1 OR favorite=1 OR id IN ("
+              "   SELECT id FROM records WHERE pinned=0 AND favorite=0"
+              "   ORDER BY created_at DESC LIMIT ?)"
+              " ORDER BY pinned DESC, created_at DESC");
     q.addBindValue(limit);
     if (q.exec()) while (q.next()) out.append(fromQuery(q));
     return out;

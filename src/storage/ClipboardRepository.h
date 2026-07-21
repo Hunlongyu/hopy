@@ -21,6 +21,8 @@ public:
 
     std::optional<ClipboardRecord> getById(qint64 id) const;
     int count() const;
+    // The limit applies only to ordinary records. Pinned and favorite records
+    // are always returned so they remain visible in their respective views.
     QList<ClipboardRecord> recentRecords(int limit) const;
 
     bool touch(qint64 id);   // bump created_at to now (used after paste-back to re-sort to top)
