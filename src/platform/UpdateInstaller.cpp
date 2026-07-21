@@ -15,9 +15,19 @@ QString sideBySideOldPath(const QString& exePath) {
     return fi.path() + QLatin1Char('/') + name;
 }
 
+QString stableInstallPath(const QString& currentExePath) {
+    const QFileInfo fi(currentExePath);
+#if defined(Q_OS_WIN)
+    return fi.path() + QStringLiteral("/hopy.exe");      // version-less, stable across updates
+#else
+    return currentExePath;                               // self-update is Windows-only for now
+#endif
+}
+
 #if defined(Q_OS_WIN)
 InstallResult applyUpdate(const QString& newExePath, const QString& currentExePath,
-                          QString* errorOut) {
+                          QString* installedOut, QString* errorOut) {
+    const QString target  = stableInstallPath(currentExePath);
     const QString oldPath = sideBySideOldPath(currentExePath);
     QFile::remove(oldPath);                              // clear any stale copy
 
@@ -26,15 +36,17 @@ InstallResult applyUpdate(const QString& newExePath, const QString& currentExePa
         if (errorOut) *errorOut = QStringLiteral("could not rename the running binary");
         return InstallResult::PermissionDenied;
     }
-    if (!QFile::copy(newExePath, currentExePath)) {
+    QFile::remove(target);                               // clear the destination (a stale hopy.exe when migrating)
+    if (!QFile::copy(newExePath, target)) {
         QFile::rename(oldPath, currentExePath);          // roll back
         if (errorOut) *errorOut = QStringLiteral("could not place the new binary");
         return InstallResult::Failed;
     }
+    if (installedOut) *installedOut = target;
     return InstallResult::Ok;
 }
 #else
-InstallResult applyUpdate(const QString&, const QString&, QString* errorOut) {
+InstallResult applyUpdate(const QString&, const QString&, QString*, QString* errorOut) {
     if (errorOut) *errorOut = QStringLiteral("self-update is not supported on this platform yet");
     return InstallResult::NotSupported;
 }
@@ -45,8 +57,12 @@ void restartApp(const QString& exePath) {
 }
 
 void cleanupOldBinary(const QString& currentExePath) {
-    const QString oldPath = sideBySideOldPath(currentExePath);
-    if (QFile::exists(oldPath)) QFile::remove(oldPath);
+    // Remove any "hopy*_old.exe" backup next to the binary. A glob (not just this
+    // name's _old) also sweeps the one-time leftover from a migration off a versioned
+    // filename, e.g. hopy-v0.4.0-windows-x64_old.exe after the install became hopy.exe.
+    const QDir dir(QFileInfo(currentExePath).path());
+    const auto backups = dir.entryList({QStringLiteral("hopy*_old.exe")}, QDir::Files);
+    for (const QString& f : backups) QFile::remove(dir.filePath(f));
 }
 
 } // namespace hopy::platform

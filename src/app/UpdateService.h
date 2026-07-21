@@ -56,6 +56,7 @@ private:
     bool                   busy_ = false;
     Phase                  phase_ = Phase::Idle;
     ReleaseInfo            pending_;
+    QString                installedPath_;    // where the last applyUpdate placed the new binary (restart target)
 };
 
 } // namespace hopy

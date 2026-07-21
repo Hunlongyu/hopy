@@ -33,6 +33,7 @@ private:
     QLabel* info_ = nullptr;
     QLabel* pct_ = nullptr;        // scroll progress, right of the info bar (blank when content fits)
     QString openKeysLabel_;
+    int textScrollRemainder_ = 0;   // pixel carry until it forms a full QPlainTextEdit line
     bool maskSensitive_ = true;
 };
 

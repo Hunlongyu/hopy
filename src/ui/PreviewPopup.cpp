@@ -107,7 +107,24 @@ void PreviewPopup::updateScrollPercent() {
 }
 
 void PreviewPopup::scrollByPixels(int dy) {
-    if (active_) if (auto* vb = active_->verticalScrollBar()) vb->setValue(vb->value() + dy);
+    if (!active_) return;
+    auto* vb = active_->verticalScrollBar();
+    if (!vb) return;
+
+    if (active_ == text_) {
+        // QPlainTextEdit's scroll-bar unit is a visual text line, not a pixel.
+        // Convert the incoming pixel distance so a 120-unit wheel notch does
+        // not become a 120-line/page jump. Preserve sub-line motion for the
+        // low-velocity tail of side-button momentum scrolling.
+        textScrollRemainder_ += dy;
+        const int lineHeight = qMax(1, QFontMetrics(text_->font()).lineSpacing());
+        const int lines = textScrollRemainder_ / lineHeight;
+        textScrollRemainder_ -= lines * lineHeight;
+        if (lines) vb->setValue(vb->value() + lines);
+        return;
+    }
+
+    vb->setValue(vb->value() + dy);
 }
 
 void PreviewPopup::setOpenKeysLabel(const QString& label) { openKeysLabel_ = label; }
@@ -121,6 +138,7 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
 
     int cw = qMin(360, maxContentW);   // content width
     int ch = 0;                        // content height (natural)
+    textScrollRemainder_ = 0;
 
     // Clear the previous fixed size so a prior (long/image) preview can't leak
     // its dimensions into this measurement.
@@ -128,10 +146,17 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
     content_->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
 
     auto textHeight = [&](const QString& t) {
-        // Deterministic wrapped-text height: same text + width => same height.
-        const QRect br = QFontMetrics(content_->font())
-            .boundingRect(QRect(0, 0, cw, 1'000'000), Qt::TextWordWrap, t);
-        return br.height() + 4;
+        // Match QPlainTextEdit: prefer word boundaries, but wrap anywhere for
+        // long paths/URLs that contain no spaces.
+        QTextDocument measure;
+        measure.setDefaultFont(text_->font());
+        measure.setDocumentMargin(0);
+        QTextOption option = measure.defaultTextOption();
+        option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+        measure.setDefaultTextOption(option);
+        measure.setPlainText(t);
+        measure.setTextWidth(cw);
+        return qCeil(measure.size().height()) + 4;
     };
 
     // A password-manager-flagged secret is masked in the preview too (Text only);
@@ -196,10 +221,11 @@ void PreviewPopup::showPreview(const ClipboardRecord& rec, const QRect& anchor, 
             active_ = text_;
             scroll_->hide(); text_->show();
             text_->setPlainText(body);   // no length cap — QPlainTextEdit lays out only visible lines
-            // Cheap height estimate from the logical line count (no full layout). Wrapped
-            // long lines under-count, but long content caps at maxH and scrolls anyway.
-            const int lineH = QFontMetrics(text_->font()).lineSpacing();
-            ch = text_->document()->blockCount() * lineH + 8;
+            // Logical line counts miss visual wrapping in long paths and URLs. Measure
+            // normal content exactly; very large pastes fill the capped popup and scroll,
+            // so avoid an expensive full-string measurement for them.
+            constexpr qsizetype kMaxMeasuredChars = 8'192;
+            ch = body.size() > kMaxMeasuredChars ? maxH : textHeight(body);
             break;
         }
     }

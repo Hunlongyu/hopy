@@ -176,13 +176,14 @@ void UpdateService::startDownload() {
 
 void UpdateService::onDownloadReady(const QString& localExe) {
     const QString cur = QCoreApplication::applicationFilePath();
-    QString err;
-    const auto r = platform::applyUpdate(localExe, cur, &err);
+    QString err, installed;
+    const auto r = platform::applyUpdate(localExe, cur, &installed, &err);
     if (r != platform::InstallResult::Ok) {
         qWarning("update install failed: %s", qPrintable(err));
         if (dlg_) dlg_->showDownloadError(T("Couldn't install the update"));
         return;                        // leave phase_ so "Retry" re-downloads
     }
+    installedPath_ = installed;        // the new binary may have landed on a new name (hopy.exe) — restart from there
     phase_ = Phase::Idle;              // installed; closing now must not cancel anything
     clearPending();                    // done with this update → clear the badge
     emit updateBadge(false, QString());
@@ -207,8 +208,11 @@ void UpdateService::onRejected() {
 }
 
 void UpdateService::doRestart() {
-    const QString cur = QCoreApplication::applicationFilePath();
-    platform::restartApp(cur);
+    // Restart the binary we just installed: after a migration the running exe's own
+    // path (applicationFilePath) is the now-renamed old name, so prefer installedPath_.
+    const QString exe = installedPath_.isEmpty() ? QCoreApplication::applicationFilePath()
+                                                 : installedPath_;
+    platform::restartApp(exe);
     QCoreApplication::quit();
 }
 

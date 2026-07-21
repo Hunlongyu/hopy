@@ -4,6 +4,20 @@ All notable changes to hopy are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.6] - 2026-07-21
+
+### Fixed
+- **Update**: an installed update now normalises the executable to a stable, version-less
+  `hopy.exe` in its folder, instead of keeping the old versioned filename. The name no
+  longer goes stale after updating, and the swap restarts from the new path. The previous
+  binary is kept briefly as a backup and swept on the next launch. (Takes effect for
+  updates made from 0.4.6 onward; an existing file can be renamed to `hopy.exe` once by
+  hand — in-place updates then preserve it.)
+- **Preview**: long file paths, URLs, and ordinary text now allocate enough height for
+  wrapped display lines instead of clipping the final lines.
+- **Scrolling**: Ctrl + mouse-wheel preview scrolling now advances by normal text-line
+  steps instead of jumping by a page or directly across the progress percentage.
+
 ## [0.4.5] - 2026-07-15
 
 ### Added
@@ -91,6 +105,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Internal
 - Self-hosted release workflow that builds, checksums, and publishes on a `v*` tag.
 
+[0.4.6]: https://github.com/Hunlongyu/hopy/releases/tag/v0.4.6
 [0.4.5]: https://github.com/Hunlongyu/hopy/releases/tag/v0.4.5
 [0.4.1]: https://github.com/Hunlongyu/hopy/releases/tag/v0.4.1
 [0.4.0]: https://github.com/Hunlongyu/hopy/releases/tag/v0.4.0
